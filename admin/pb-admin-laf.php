@@ -154,6 +154,12 @@ function replace_book_admin_menu() {
 		);
 	}
 
+    // Lists
+    add_menu_page( __( 'Lists', 'pressbooks' ), __( 'Lists', 'pressbooks' ), 'edit_posts', 'pb_lists', __NAMESPACE__ . '\display_list_h', 'dashicons-editor-ul', 11 );
+    add_submenu_page('pb_lists', __( 'TOC', 'pressbooks' ), __( 'TOC', 'pressbooks' ), 'edit_posts', 'pb_list_h', __NAMESPACE__ . '\display_list_h', '');
+    add_submenu_page('pb_lists', __( 'Images', 'pressbooks' ), __( 'Images', 'pressbooks' ), 'edit_posts', 'pb_list_img', __NAMESPACE__ . '\display_list_img', '');
+    add_submenu_page('pb_lists', __( 'Tables', 'pressbooks' ), __( 'Tables', 'pressbooks' ), 'edit_posts', 'pb_list_table', __NAMESPACE__ . '\display_list_table', '');
+
 	// Book Information
 	$metadata = new \PressBooks\Metadata();
 	$meta = $metadata->getMetaPost();
@@ -886,6 +892,28 @@ function ecomm_links_sanitize( $input ) {
 function display_sell() {
 
 	require( PB_PLUGIN_DIR . 'admin/templates/sell.php' );
+}
+
+/**
+ * Display Lists
+ */
+
+function display_list_h(){
+    $list_table = new \PressBooks\Lists\Lists_List_Table("h");
+    $list_table->prepare_items();
+    $list_table->display();
+}
+
+function display_list_img(){
+    $list_table = new \PressBooks\Lists\Lists_List_Table("img");
+    $list_table->prepare_items();
+    $list_table->display();
+}
+
+function display_list_table(){
+    $list_table = new \PressBooks\Lists\Lists_List_Table("table");
+    $list_table->prepare_items();
+    $list_table->display();
 }
 
 
