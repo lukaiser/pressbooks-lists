@@ -1,11 +1,19 @@
 /**
- * Created by lukas on 04.07.14.
+ * Tinymce Plugin for the Lists Module
+ *
+ * Enhances the Tinymce editor with the lists toolbar
  */
 
 
 tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
     var toolbarActive = false;
     var defaultActive = true;
+
+    /**
+     * Checks if a HTMLElement is in the list or not
+     * @param HTMLElement node the Element to be checked
+     * @return boolean
+     */
 
     function isToggled( node ) {
         var dom = editor.dom;
@@ -24,6 +32,11 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
             }
         }
     }
+
+    /**
+     * Changes the in list status
+     * @param HTMLElement node the Element to be changed
+     */
 
     function toggleList( node ){
         var dom = editor.dom;
@@ -44,6 +57,11 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
         addToolbar(node);
     }
 
+    /**
+     * Prompts window with the reference shortcode
+     * @param HTMLElement node the Element to show the shortcode of
+     */
+
     function getShortcode( node ){
         var dom = editor.dom;
 
@@ -53,6 +71,11 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
 
         window.prompt("Copy to clipboard: Ctrl+C, Enter", '[rev id="'+dom.getAttrib(node, "ID")+'"/]');
     }
+
+    /**
+     * Edite the caption of a HTMLElement shows prompt
+     * @param HTMLElement node the element edit the caption
+     */
 
     function editCaption( node ){
         var dom = editor.dom;
@@ -74,6 +97,11 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
         }
     }
 
+    /**
+     * Adds the list toolbar to an element
+     * @param HTMLElement node the element the toolbar should be added
+     */
+
     function addToolbar( node ) {
         var rectangle, toolbarHtml, toolbar, left, inList,
             dom = editor.dom;
@@ -87,8 +115,6 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
 
         dom.setAttrib( node, 'data-wp-listselect', 1 );
         rectangle = dom.getRect( node );
-        console.log(node);
-        console.log(rectangle);
 
         inList = isToggled(node) ? "active" : "";
 
@@ -121,6 +147,9 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
         toolbarActive = true;
     }
 
+    /**
+     * Removes the list toolbar
+     */
 
     function removeToolbar() {
         var toolbar = editor.dom.get( 'wp-list-toolbar' );
@@ -134,11 +163,18 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
         toolbarActive = false;
     }
 
+    /**
+     * Checks if Element can have the toolbar
+     * @param HTMLElement node the element that should be checked
+     * @return HTMLElement|false the passed element, a parent element meeting the criteria or false
+     */
+
     function isElement(node){
         var elements = ["TABLE", "H1", "H2", "H3", "H4", "H5", "H6", "IMG"];
         if(elements.indexOf(node.nodeName) > -1){
             return(node);
         }else{
+            // search for parent node
             while(node.parentNode){
                 node = node.parentNode;
                 if(elements.indexOf(node.nodeName) > -1){
@@ -202,6 +238,7 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
             if ( element ) {
                 editor.selection.select( element );
 
+                // Handle Actions
                 if ( dom.hasClass( node, 'list' ) ) {
                     toggleList(element);
                 } else if ( dom.hasClass( node, 'ref' ) ) {
@@ -222,8 +259,8 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
     });
 
     editor.on( 'PostProcess', function( event ) {
-        console.debug("PostProcess");
         if ( event.get ) {
+            // Remove elements just used for the editor
             event.content = event.content.replace( / data-wp-listselect="1"/g, '' );
         }
     });

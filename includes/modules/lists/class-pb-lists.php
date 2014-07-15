@@ -8,34 +8,55 @@
 namespace PressBooks\Lists;
 
 
+/**
+ * Class Lists
+ * Main List Class
+ * Handles all the hooks and provides functions for external parts of PressBooks
+ * @package PressBooks\Lists
+ */
 class Lists {
 
-	/**
+	/**********************
 	 * Init Hooks
-	 */
-	
-	static function initAdminHooks( ) {
-        //Add a callback to regiser our tinymce plugin
+     **********************/
+
+    /**
+     * Init Admin Hooks
+     */
+    static function init_admin_hooks( ) {
         add_filter("mce_external_plugins", '\PressBooks\Lists\Lists::register_tinymce_plugin');
         add_editor_style( PB_PLUGIN_URL.'assets/css/pbmanagelists.css' );
         add_action('wp_ajax__ajax_fetch_lists_list', '\PressBooks\Lists\Lists::_ajax_fetch_lists_list_callback');
         add_filter( 'wp_insert_post_data', '\PressBooks\Lists\Lists::wp_insert_post_data_handler', '10', 2 );
     }
 
-    static function initHooks( ){
+    /**
+     * Init Site Hooks
+     */
+    static function init_hooks( ){
         add_filter( 'the_content', '\PressBooks\Lists\Lists::handle_content', 20 );
         add_shortcode( 'rev', '\PressBooks\Lists\Lists::handle_rev_shortcode' );
     }
 
-    /**
+    /**********************
      * Hooks
-     */
+     **********************/
 
+    /**
+     * Adds the tinymce plugin to the editor
+     * @param $plugin_array
+     * @return array
+     */
     static function register_tinymce_plugin($plugin_array){
         $plugin_array['pbmanagelists'] = PB_PLUGIN_URL.'assets/js/pbmanagelists.js';
         return $plugin_array;
     }
 
+    /**
+     * Adds Lists to chapters with the right section type and adds prefix to captions
+     * @param $content
+     * @return string
+     */
     static function handle_content($content){
 
         $conf = array();
@@ -49,18 +70,21 @@ class Lists {
             $type = pb_get_section_type($post);
 
             if(array_key_exists($type, $conf)){
-                $bl = \PressBooks\Lists\Lists::getBookLists();
-                return ListShow::displayHierarchicalList($bl[$conf[$type]]);
+                $bl = \PressBooks\Lists\Lists::get_book_lists();
+                return ListShow::display_hierarchical_list($bl[$conf[$type]]);
             }
         }
 
-        $bl = \PressBooks\Lists\Lists::getBookLists();
+        $bl = \PressBooks\Lists\Lists::get_book_lists();
         foreach($bl as $l){
             $content = $l->addCaptionPrefix($content);
         }
         return $content;
     }
 
+    /**
+     * Handles ajax requests by Lists_List_Table
+     */
     static function _ajax_fetch_lists_list_callback(){
         error_reporting(E_ERROR | E_PARSE);
         $GLOBALS["hook_suffix"] = $_REQUEST["hook_suffix"];
@@ -70,9 +94,15 @@ class Lists {
         }
     }
 
+    /**
+     * Adds ids and in-list class to DOMElements that should have one before saving a post
+     * @param $data
+     * @param $postarr
+     * @return mixed
+     */
     static function wp_insert_post_data_handler($data , $postarr){
 
-        $lists = static::getInitialLists();
+        $lists = static::get_initial_lists();
 
         $content = $data["post_content"];
         $content = wp_unslash($content);
@@ -87,6 +117,11 @@ class Lists {
         return($data);
     }
 
+    /**
+     * Handles the reverence (rev) shortcode
+     * @param $atts
+     * @return string
+     */
     static function handle_rev_shortcode($atts){
         extract( shortcode_atts(
                 array(
@@ -96,14 +131,19 @@ class Lists {
         if(!$id){
             return "";
         }
-        return ListNodeShow::getRevString(static::getListNodeById($id));
+        return ListNodeShow::get_rev_string(static::get_list_node_by_id($id));
     }
 
-    /**
+    /**********************
      * Functions
-     */
+     **********************/
 
-    static function getBookLists($idsAndClasses = false){
+    /**
+     * Returns a array of all the Lists
+     * @param bool $idsAndClasses If Ids and in-list class should be added to DOMElements not having them
+     * @return array
+     */
+    static function get_book_lists($idsAndClasses = false){
         // -----------------------------------------------------------------------------
         // Is cached?
         // -----------------------------------------------------------------------------
@@ -119,7 +159,7 @@ class Lists {
         // Initiate Lists
         // -----------------------------------------------------------------------------
 
-        $lists = static::getInitialLists();
+        $lists = static::get_initial_lists();
 
         // -----------------------------------------------------------------------------
         // Get Content
@@ -136,7 +176,7 @@ class Lists {
             foreach ( $struct as $i => $val ) {
 
                 if ( isset( $val['post_content'] ) ) {
-                    static::getBookLists_handleChapter($lists, $val['post_content'], $val['ID'], $idsAndClasses);
+                    static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $idsAndClasses);
                 }
 
                 if ( 'part' == $type ) {
@@ -145,7 +185,7 @@ class Lists {
                     foreach ( $book_contents[$type][$i]['chapters'] as $j => $val2 ) {
 
                         if ( isset( $val2['post_content'] ) ) {
-                            static::getBookLists_handleChapter($lists, $val2['post_content'], $val2['ID'], $idsAndClasses);
+                            static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $idsAndClasses);
                         }
 
                     }
@@ -164,8 +204,13 @@ class Lists {
         return $book_lists;
     }
 
-    static function getListNodeById($id){
-        $bl = static::getBookLists();
+    /**
+     * Get a ListNode by its Id
+     * @param string $id the node id
+     * @return ListNode|false
+     */
+    static function get_list_node_by_id($id){
+        $bl = static::get_book_lists();
         foreach($bl as $l){
             if($node = $l->getNodeById($id)){
                 return($node);
@@ -174,11 +219,18 @@ class Lists {
         return(false);
     }
 
-    /**
+    /**********************
      * Private Functions
-     */
+     **********************/
 
-    private static function getBookLists_handleChapter($lists, $content, $pid, $idsAndClasses = false){
+    /**
+     * Handles a chapter while creating the lists
+     * @param array $lists the lists
+     * @param string $content the content of the chapter
+     * @param int $pid the id of the post
+     * @param bool $idsAndClasses If Ids and in-list class should be added to DOMElements not having them
+     */
+    private static function get_book_lists__handle_chapter($lists, $content, $pid, $idsAndClasses = false){
         if($idsAndClasses){
             $changed = false;
             foreach($lists as $list){
@@ -201,7 +253,11 @@ class Lists {
         }
     }
 
-    private static function getInitialLists(){
+    /**
+     * Get all existing lists (empty)
+     * @return array
+     */
+    private static function get_initial_lists(){
         $lists = array();
 
         $lists["h"] = new \PressBooks\Lists\XpathList(array("h1", "h2", "h3", "h4", "h5", "h6"), ".");

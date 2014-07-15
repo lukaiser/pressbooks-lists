@@ -9,24 +9,51 @@
 namespace PressBooks\Lists;
 
 
+/**
+ * Class ListChapter
+ * Represents all the list items of a Chapter of the book
+ * @package PressBooks\Lists
+ */
 class ListChapter {
 
+    /**
+     * @var \PressBooks\Lists\iList the list the chapter is in
+     */
     public $list;
 
+    /**
+     * @var int the id of the post
+     */
     public $number;
+    /**
+     * @var array all the nodes of the chapter
+     */
     public $child;
 
+    /**
+     * @param \PressBooks\Lists\iList $list the list the chapter is in
+     * @param int $number the id of the post
+     */
     function __construct($list = null, $number){
         $this->list = $list;
         $this->number = $number;
         $this->child = array();
     }
 
+    /**
+     * Adds a child to the chapter
+     * @param \PressBooks\Lists\ListNode $child the child
+     */
     function addChild($child){
         $child->chapter = $this;
         $this->child[] = $child;
     }
 
+    /**
+     * Returns a array of the numbers representing the position of the child
+     * @param \PressBooks\Lists\ListNode $child
+     * @return array
+     */
     function getNumberingOfChild($child){
         $cna = array();
         $cna[] = $this->number;
@@ -51,6 +78,12 @@ class ListChapter {
         }
     }
 
+    /**
+     * Returns an array of nodes.
+     * All nodes are childs of the array
+     * Active and Inactive ones
+     * @return array
+     */
     function getFlatArray(){
         $out = array();
         foreach($this->child as $child){
@@ -59,6 +92,11 @@ class ListChapter {
         return($out);
     }
 
+    /**
+     * Returns an array representing the hierarchy of the nodes
+     * Only active nodes
+     * @return array
+     */
     function getHierarchicalArray(){
         $out = array();
         $out["childNodes"] = array();
@@ -80,6 +118,11 @@ class ListChapter {
         return $out;
     }
 
+    /**
+     * Returns a node by a id
+     * @param string $id id of the node
+     * @return \PressBooks\Lists\ListNode|false
+     */
     function getNodeById($id){
         foreach($this->child as $child){
             if($n = $child->getNodeById($id)){

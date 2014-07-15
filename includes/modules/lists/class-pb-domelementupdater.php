@@ -1,9 +1,7 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: lukas
- * Date: 10.07.14
- * Time: 16:44
+ * A Class adding functionality to DOMDocument. Used for all xpath the interaction with content
+ * @package PressBooks\Lists
  */
 
 namespace PressBooks\Lists;
@@ -11,9 +9,21 @@ namespace PressBooks\Lists;
 
 class DOMElementUpdater {
 
+    /**
+     * @var \DOMDocument the DOMDocument
+     */
     private $html;
+    /**
+     * @var \PressBooks\Lists\ListNode the node currently handled
+     */
     private $node;
 
+
+    /**
+     * Returns the DOMElement of a node
+     * @param \PressBooks\Lists\ListNode $node the node
+     * @return \DOMNode
+     */
     function getDomElement($node){
         $this->node = $node;
         $post = get_post($node->pid);
@@ -22,6 +32,12 @@ class DOMElementUpdater {
         return $xpath->query($ss)->item(0);
     }
 
+
+    /**
+     * Returns a Xpath object for a content
+     * @param string $content the content
+     * @return \DOMXpath
+     */
     function getDOMXpath($content){
         $this->html = new \DOMDocument();
         $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
@@ -29,6 +45,11 @@ class DOMElementUpdater {
         return new \DOMXpath($this->html);
     }
 
+
+    /**
+     * Returns the new content of the DOMDocument generated in getDOMXpath()
+     * @return string
+     */
     function getContent(){
         $content = $this->html->saveHTML();
         $content = html_entity_decode($content);
@@ -48,6 +69,11 @@ class DOMElementUpdater {
         return $content;
     }
 
+
+    /**
+     * Saves the content of the DOMDocument to the Wordpress Database.
+     * Informations from the node passed in getDomElement() is needed
+     */
     function save(){
         $content = $this->getContent();
 
@@ -58,6 +84,12 @@ class DOMElementUpdater {
         wp_update_post ($new_post);
     }
 
+
+    /**
+     * Returns the Xpath needed to find a node in a document
+     * @param $node
+     * @return string
+     */
     private function getNodeXpath($node){
         return "//".$node->type."[@id='".$node->id."']";
     }

@@ -101,7 +101,7 @@ if ( \PressBooks\Book::isBook() ) {
 // Lists
 // -------------------------------------------------------------------------------------------------------------------
 if ( \PressBooks\Book::isBook() ) {
-    add_action('init', '\PressBooks\Lists\Lists::initAdminHooks');
+    add_action('init', '\PressBooks\Lists\Lists::init_admin_hooks');
 }
 
 // -------------------------------------------------------------------------------------------------------------------

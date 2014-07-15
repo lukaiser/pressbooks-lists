@@ -9,7 +9,22 @@
 namespace PressBooks\Lists;
 
 
+/**
+ * Class ImgList
+ * The List for Images
+ * Basically XpathList but the caption prefix gets added to a second place
+ * @package PressBooks\Lists
+ */
 class ImgList extends XpathList {
+
+    /**
+     * Adds the caption prefix to the node
+     * @param DOMXpath $xpath the Xpath object
+     * @param DOMElement $node the HTML Element
+     * @param ListNode $ndata the meta data
+     * @param string $prefix the prefix
+     * TODO: add functionality to XpathList, so $captionXpath can be a array and all get updated
+     */
     protected function addCaptionPrefixToNode($xpath, $node, $ndata, $prefix)
     {
         parent::addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);

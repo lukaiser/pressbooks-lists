@@ -63,7 +63,7 @@ add_filter('upload_mimes', '\PressBooks\Media\addMimeTypes');
 // Lists
 // -------------------------------------------------------------------------------------------------------------------
 
-add_action('init', '\PressBooks\Lists\Lists::initHooks');
+add_action('init', '\PressBooks\Lists\Lists::init_hooks');
 
 // -------------------------------------------------------------------------------------------------------------------
 // Custom Post Types and Taxonomies

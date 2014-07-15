@@ -6,8 +6,6 @@
 namespace PressBooks\Lists;
 
 
-use \PressBooks\Book;
-use \PressBooks\Catalog;
 
 
 if ( ! class_exists( 'WP_List_Table' ) ) {
@@ -16,6 +14,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 
 /**
  * @see http://codex.wordpress.org/Class_Reference/WP_List_Table
+ * Same structure as \PressBooks\Catalog_List_Table
  */
 class Lists_List_Table extends \WP_List_Table {
 
@@ -73,7 +72,7 @@ class Lists_List_Table extends \WP_List_Table {
 
     function column_type($item){
 
-        $tagnames = \PressBooks\Lists\Lists::getBookLists()[$this->listtype]->getTypes();
+        $tagnames = \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->getTypes();
         if(is_array($tagnames)){
             $out = '<select name="pb_lists_list_type-'.$item["id"].'">';
 
@@ -101,7 +100,7 @@ class Lists_List_Table extends \WP_List_Table {
             $item['id'], // The value of the checkbox should be the record's id
             $item['caption']
         );*/
-        return ListNodeShow::getCaption($item);
+        return ListNodeShow::get_caption($item);
     }
 
     function column_active($item) {
@@ -116,7 +115,7 @@ class Lists_List_Table extends \WP_List_Table {
     }
 
     function column_number($item) {
-        return ListNodeShow::getNumber($item);
+        return ListNodeShow::get_number($item);
     }
 
 
@@ -149,8 +148,6 @@ class Lists_List_Table extends \WP_List_Table {
 	 * @return array An associative array containing column information: 'slugs'=>'Visible Titles'
 	 */
 	function get_columns() {
-
-		$profile = ( new Catalog() )->getProfile(); // PHP 5.4+
 
 		$columns = array(
 			'cb' => '<input type="checkbox" />', // Render a checkbox instead of text
@@ -295,16 +292,16 @@ class Lists_List_Table extends \WP_List_Table {
 
         //TODO rights and check requestvars
         if($_REQUEST["change_action"] == "type" && $_REQUEST["change_value"] && $_REQUEST["change_id"]){
-            \PressBooks\Lists\Lists::getBookLists()[$this->listtype]->changeNodeType($_REQUEST["change_id"], $_REQUEST["change_value"]);
+            \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->changeNodeType($_REQUEST["change_id"], $_REQUEST["change_value"]);
         }else if($_REQUEST["change_action"] == "active" && $_REQUEST["change_value"] && $_REQUEST["change_id"]){
             $value = filter_var($_REQUEST["change_value"], FILTER_VALIDATE_BOOLEAN);
-            \PressBooks\Lists\Lists::getBookLists()[$this->listtype]->setNodeActive($_REQUEST["change_id"], $value);
+            \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->setNodeActive($_REQUEST["change_id"], $value);
         }
 
         $response = $this->getItemsData();
         foreach($response as &$item){
-            $item["number"] = ListNodeShow::getNumber($item);
-            $item["caption"] = ListNodeShow::getCaption($item);
+            $item["number"] = ListNodeShow::get_number($item);
+            $item["caption"] = ListNodeShow::get_caption($item);
         }
         die( json_encode( $response ) );
 	}
@@ -315,11 +312,11 @@ class Lists_List_Table extends \WP_List_Table {
         //Detect when a bulk action is being triggered...
         if( 'add'===$this->current_action() ) {
             foreach($_REQUEST[$this->_args['singular']] as $item) {
-                \PressBooks\Lists\Lists::getBookLists()[$this->listtype]->setNodeActive($item, true);
+                \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->setNodeActive($item, true);
             }
         }else if( 'remove'===$this->current_action() ){
             foreach($_REQUEST[$this->_args['singular']] as $item) {
-                \PressBooks\Lists\Lists::getBookLists()[$this->listtype]->setNodeActive($item, false);
+                \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->setNodeActive($item, false);
             }
         }
 
@@ -345,7 +342,7 @@ class Lists_List_Table extends \WP_List_Table {
      */
     protected function getItemsData() {
 
-        $bl = \PressBooks\Lists\Lists::getBookLists(true);
+        $bl = \PressBooks\Lists\Lists::get_book_lists(true);
         $data = $bl[$this->listtype]->getFlatArray();
 
         return $data;

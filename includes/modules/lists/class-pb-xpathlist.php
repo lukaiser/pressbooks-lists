@@ -9,25 +9,48 @@
 namespace PressBooks\Lists;
 
 
+/**
+ * Class XpathList
+ * A List that acquires data by xPath
+ * @package PressBooks\Lists
+ */
 class XpathList implements iList {
 
+    /**
+     * @var string|array the HTML tag name or tag names
+     */
     private $tagname;
+    /**
+     * @var string the Xpath from the DOMElement to the caption
+     */
     private $captionXpath;
-    public $list;
+    /**
+     * @var array the chapters
+     */
+    public $chapters;
 
+    /**
+     * @param string|array $tagname the HTML tag name or tag names
+     * @param string $captionXpath the Xpath from the DOMElement to the caption
+     */
     function __construct($tagname, $captionXpath)
     {
         $this->tagname = $tagname;
         $this->captionXpath = $captionXpath;
-        $this->list = array();
+        $this->chapters = array();
     }
 
+    /**
+     * Add a the content of a post to the list
+     * @param string $content the content of the post
+     * @param int $pid the id of the post
+     */
     function addContentToList($content, $pid)
     {
         $post = get_post($pid);
         $cn = pb_get_chapter_number($post->post_name);
         $c = new \PressBooks\Lists\ListChapter($this, $cn);
-        $this->list[] = $c;
+        $this->chapters[] = $c;
 
         if(trim($content) != ""){
             $html = new \DOMDocument();
@@ -41,6 +64,12 @@ class XpathList implements iList {
             }
         }
     }
+
+    /**
+     * Adds missing html ids and in-list and not-in-list classes to a post
+     * @param int $pid the post id
+     * @return string|false
+     */
     function contentAddMissingIdAndClasses($content){
         $changed = false;
         if(trim($content) != ""){
@@ -73,6 +102,11 @@ class XpathList implements iList {
         }
     }
 
+    /**
+     * Change the type of a node e.g. h1 to h4
+     * @param string $id id of the node
+     * @param string $type the new type
+     */
     function changeNodeType($id, $type){
         if(is_array($this->tagname) && in_array($type, $this->tagname)){
 
@@ -107,6 +141,12 @@ class XpathList implements iList {
         }
 
     }
+
+    /**
+     * Changes the in list status of the node
+     * @param string $id id of the node
+     * @param boolean $active the status the node should become
+     */
     function setNodeActive($id, $active){
 
         $node = $this->getNodeById($id);
@@ -137,28 +177,49 @@ class XpathList implements iList {
         $node->active = $active;
     }
 
+    /**
+     * Returns an array of nodes.
+     * All nodes are children of the array
+     * Active and Inactive ones
+     * @return array
+     */
     function getFlatArray()
     {
         $out = array();
-        foreach($this->list as $list){
+        foreach($this->chapters as $list){
             $out = array_merge($out, $list->getFlatArray());
         }
         return($out);
     }
 
+    /**
+     * Returns an array representing the hierarchy of the nodes
+     * Chapters are represented too
+     * Only active nodes
+     * @return array
+     */
     function getHierarchicalArray()
     {
         $out = array();
-        foreach($this->list as $list){
+        foreach($this->chapters as $list){
             $out[] = $list->getHierarchicalArray();
         }
         return($out);
     }
 
+    /**
+     * Returns all the types the list represents
+     * @return array|string
+     */
     function getTypes(){
         return($this->tagname);
     }
 
+    /**
+     * Returns the hierarchy level of a tagname
+     * @param string $tagname
+     * @return int
+     */
     function getDepthOfTagname($tagname){
         if(is_array($this->tagname)){
             foreach($this->tagname as $i){
@@ -169,8 +230,13 @@ class XpathList implements iList {
         }
     }
 
+    /**
+     * Returns a node by a id
+     * @param string $id id of the node
+     * @return \PressBooks\Lists\ListNode|false
+     */
     function getNodeById($id){
-        foreach($this->list as $list){
+        foreach($this->chapters as $list){
             if($n = $list->getNodeById($id)){
                 return $n;
             }
@@ -178,6 +244,11 @@ class XpathList implements iList {
         return false;
     }
 
+    /**
+     * Adds the prefix the captions of the content
+     * @param string $content the content the captions should be added to
+     * @return string
+     */
     function addCaptionPrefix($content){
         if(trim($content) != ""){
             $up = new \PressBooks\Lists\DOMElementUpdater();
@@ -191,7 +262,7 @@ class XpathList implements iList {
 
                 if(in_array("in-list",$nclassa) && $id){
                     $ndata = $this->getNodeById($id);
-                    $prefix = ListNodeShow::getCaptionPrefix($ndata);
+                    $prefix = ListNodeShow::get_caption_prefix($ndata);
                     $this->addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);
                 }
             }
@@ -202,6 +273,10 @@ class XpathList implements iList {
         return $content;
     }
 
+    /**
+     * Returns the xPaht for the tagname or tagnames
+     * @return string
+     */
     private function getSearchXpath(){
         $ssa = array();
         if(is_array($this->tagname)){
@@ -216,6 +291,13 @@ class XpathList implements iList {
         return "//*[".$ss."]";
     }
 
+    /**
+     * Creates a ListNode from a DOMElement
+     * @param DOMElement $node the node
+     * @param DOMXpath $xpath the xPath object
+     * @param int $pid the post id
+     * @return ListNode
+     */
     private function createListNodeWithNode($node, $xpath, $pid){
         $nname = $node->nodeName;
         $nclass = $node->getAttribute("class");
@@ -233,6 +315,13 @@ class XpathList implements iList {
         return new \PressBooks\Lists\ListNode($this, $active, $pid, $nid, $nname, $ncaption);
     }
 
+    /**
+     * Adds the caption prefix to the node
+     * @param DOMXpath $xpath the Xpath object
+     * @param DOMElement $node the HTML Element
+     * @param ListNode $ndata the meta data
+     * @param string $prefix the prefix
+     */
     protected function addCaptionPrefixToNode($xpath, $node, $ndata, $prefix){
         $c = $xpath->query($this->captionXpath, $node)->item(0);
         if(get_class($c) == "DOMAttr"){
