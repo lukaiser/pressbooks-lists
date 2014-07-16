@@ -82,6 +82,7 @@ class ListNode {
     function getNodeAsArray(){
         $out = array();
         $out["id"] = $this->id;
+        $out["pid"] = $this->pid;
         $out["type"] = $this->type;
         $out["number"] = $this->number;
         $out["numberArray"] = $this->getNumbering();

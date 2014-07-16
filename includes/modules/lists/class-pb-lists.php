@@ -71,7 +71,7 @@ class Lists {
 
             if(array_key_exists($type, $conf)){
                 $bl = \PressBooks\Lists\Lists::get_book_lists();
-                return ListShow::display_hierarchical_list($bl[$conf[$type]]);
+                return ListShow::hierarchical_list($bl[$conf[$type]]);
             }
         }
 
