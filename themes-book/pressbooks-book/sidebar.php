@@ -26,8 +26,13 @@
 				<li>
 					<ul>
 						<?php foreach ($book['front-matter'] as $fm): ?>
-						<?php if ($fm['post_status'] != 'publish') continue; // Skip ?>
-						<li class="front-matter <?php echo pb_get_section_type( get_post($fm['ID']) ) ?>"><a href="<?php echo get_permalink($fm['ID']); ?>"><?php echo pb_strip_br( $fm['post_title'] );?></a></li>
+						<?php if ($fm['post_status'] != 'publish' || get_post_meta( $fm['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
+						<li class="front-matter <?php echo pb_get_section_type( get_post($fm['ID']) ) ?>"><a href="<?php echo get_permalink($fm['ID']); ?>"><?php if(($c = pb_get_chapter_number($fm['post_name'])) !== 0) echo '<span class="toc-front-matter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $fm['post_title'] );?></a>
+                            <?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $fm['ID'] );
+                            if ( $subtitle && pb_should_parse_sections() ){?>
+                                <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+                            <?php } ?>
+                        </li>
 						<?php endforeach; ?>
 					</ul>
 				</li>
@@ -40,17 +45,12 @@
 				<li>
 					<ul>
 						<?php foreach ($part['chapters'] as $chapter) : ?>
-							<?php if ($chapter['post_status'] != 'publish') continue; // Skip ?>
-							<li class="chapter <?php echo pb_get_section_type( get_post($chapter['ID']) ) ?>"><a href="<?php echo get_permalink($chapter['ID']); ?>"><?php echo pb_strip_br( $chapter['post_title'] ); ?></a>
-							<?php $sections = pb_get_chapter_sections( $chapter['ID'] );
-							if ( $sections && pb_should_parse_sections() ){
-								$s = 1; ?>
-								<ul class="sections">
-								<?php foreach ( $sections as $id => $name ) { ?>
-									<li class="section"><a href="<?php echo get_permalink($chapter['ID']); ?>#<?php echo $id; ?>"><?php echo $name; ?></a></li>
-								<?php } ?>
-								</ul>
-							<?php } ?>
+							<?php if ($chapter['post_status'] != 'publish' || get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
+							<li class="chapter <?php echo pb_get_section_type( get_post($chapter['ID']) ) ?>"><a href="<?php echo get_permalink($chapter['ID']); ?>"><?php if(($c = pb_get_chapter_number($chapter['post_name'])) !== 0) echo '<span class="toc-chapter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $chapter['post_title'] ); ?></a>
+                            <?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $chapter['ID'] );
+                            if ( $subtitle && pb_should_parse_sections() ){?>
+                                <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+                            <?php } ?>
 							</li>
 						<?php endforeach; ?>
 					</ul>
@@ -60,8 +60,13 @@
 				<li>
 					<ul>
 						<?php foreach ($book['back-matter'] as $bm): ?>
-						<?php if ($bm['post_status'] != 'publish') continue; // Skip ?>
-						<li class="back-matter <?php echo pb_get_section_type( get_post($bm['ID']) ) ?>"><a href="<?php echo get_permalink($bm['ID']); ?>"><?php echo pb_strip_br( $bm['post_title'] );?></a></li>
+						<?php if ($bm['post_status'] != 'publish' || get_post_meta( $bm['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
+						<li class="back-matter <?php echo pb_get_section_type( get_post($bm['ID']) ) ?>"><a href="<?php echo get_permalink($bm['ID']); ?>"><?php if(($c = pb_get_chapter_number($bm['post_name'])) !== 0) echo '<span class="toc-back-matter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $bm['post_title'] );?></a>
+                            <?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $bm['ID'] );
+                            if ( $subtitle && pb_should_parse_sections() ){?>
+                                <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+                            <?php } ?>
+                        </li>
 						<?php endforeach; ?>
 					</ul>
 				</li>

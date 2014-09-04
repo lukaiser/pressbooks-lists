@@ -30,14 +30,28 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 						echo '</ol></li>' . "\n";
 					}
 
+                    if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+                        continue;
+                    }
+
 					if ( get_post_meta( $v['ID'], 'pb_part_invisible', true ) !== 'on' ) {
 						$text = strip_tags( \PressBooks\Sanitize\decode( $v['post_title'] ) );
 						if ( ! $text ) $text = ' ';
 
+                        $cnumber = pb_get_chapter_number($v['post_name']);
+                        if($cnumber !== 0){
+                            $text = $cnumber." - ".$text;
+                        }
+
 						if ( preg_match( '/^part-/', $k ) ) {
 							echo '<li><a href="OEBPS/' . $v['filename'] . '">' . $text . '</a>' . "\n";
 						} else {
-							echo '<li><a href="OEBPS/' . $v['filename'] . '">' . $text . '</a></li>' . "\n";
+							echo '<li><a href="OEBPS/' . $v['filename'] . '">' . $text . '</a>';
+                            if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                                $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
+                                echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, "OEBPS/".$v['filename'], "ol");
+                            }
+                            echo '</li>' . "\n";
 						}
 
 						if ( preg_match( '/^part-/', $k ) ) {

@@ -417,6 +417,21 @@ function add_meta_boxes() {
 		'label' => __( 'Set as ebook start-point', 'pressbooks')
 	) );
 
+    // Visibility in TOC
+
+    x_add_metadata_group( 'metadata-visibility', array( 'chapter', 'front-matter', 'back-matter' ), array(
+        'label' => __( 'Visibility', 'pressbooks' ),
+        'context' => 'side',
+        'priority' => 'low',
+    ) );
+
+    x_add_metadata_field( 'invisible-in-toc', array( 'chapter', 'front-matter', 'back-matter' ), array(
+        'field_type' => 'checkbox',
+        'group' => 'metadata-visibility',
+        'label' => __( 'Invisible in Toc', 'pressbooks' ),
+        'description' => __( 'Hide from table of contents and numbering.', 'pressbooks' )
+    ) );
+
 	// Front Matter Metadata
 
 	x_add_metadata_group( 'front-matter-metadata', 'front-matter', array(

@@ -41,21 +41,22 @@ class Xhtml11 extends Export {
 
 
 	/**
-	 * We forcefully reorder some of the front-matter types to respect the Chicago Manual of Style.
-	 * Keep track of where we are using this variable.
-	 *
-	 * @var int
-	 */
-	protected $frontMatterPos = 1;
-
-
-	/**
 	 * Sometimes the user will omit an introduction so we must inject the style in either the first
 	 * part or the first chapter ourselves.
 	 *
 	 * @var bool
 	 */
 	protected $hasIntroduction = false;
+
+    /**
+     * Position of lists
+     *
+     * 0 = Don not display
+     * 1 = In front matter
+     * 2 = In back matter
+     * @var int
+     */
+    protected $listsPosition = 0;
 
 
 	/**
@@ -88,6 +89,7 @@ class Xhtml11 extends Export {
 		}
 		if ( isset( $fixme ) )
 			$GLOBALS['hl_Ids'] = $fixme;
+
 	}
 
 
@@ -157,6 +159,12 @@ class Xhtml11 extends Export {
 			}
 		}
 
+        //Filters for the chapter numbers and the books structure, do to the rearangements in the front-matter
+        add_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10, 2 );
+        add_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10, 2 );
+        add_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
+        $this->themeOptionsOverrides();
+
 		// Override footnote shortcode
 		if ( ! empty( $_GET['endnotes'] ) ) {
 			add_shortcode( 'footnote', array( $this, 'endnoteShortcode' ) );
@@ -203,6 +211,11 @@ class Xhtml11 extends Export {
 		// Table of contents
 		$this->echoToc( $book_contents, $metadata );
 
+        // Lists
+        if($this->listsPosition == 1){
+            $this->echoLists( $book_contents, $metadata);
+        }
+
 		// Front-matter
 		$this->echoFrontMatter( $book_contents, $metadata );
 
@@ -212,11 +225,20 @@ class Xhtml11 extends Export {
 		// Parts, Chapters
 		$this->echoPartsAndChapters( $book_contents, $metadata );
 
+        // Lists
+        if($this->listsPosition == 2){
+            $this->echoLists( $book_contents, $metadata);
+        }
+
 		// Back-matter
 		$this->echoBackMatter( $book_contents, $metadata );
 
 		// XHTML, Stop!
 		echo "</body>\n</html>";
+
+        remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
+        remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
+        remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
 	}
 
 
@@ -484,7 +506,6 @@ class Xhtml11 extends Export {
 		$front_matter_printf .= '<div class="ugc front-matter-ugc">%s</div>%s';
 		$front_matter_printf .= '</div>';
 
-		$i = $this->frontMatterPos;
 		foreach ( array( 'before-title' ) as $compare ) {
 			foreach ( $book_contents['front-matter'] as $front_matter ) {
 
@@ -504,16 +525,14 @@ class Xhtml11 extends Export {
 				printf( $front_matter_printf,
 					$subclass,
 					$slug,
-					$i,
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					$this->doEndnotes( $id ) );
 
 				echo "\n";
-				++$i;
 			}
 		}
-		$this->frontMatterPos = $i;
 	}
 
 
@@ -604,7 +623,7 @@ class Xhtml11 extends Export {
 		$front_matter_printf .= '<div class="ugc front-matter-ugc">%s</div>%s';
 		$front_matter_printf .= '</div>';
 
-		$i = $this->frontMatterPos;
+
 		foreach ( array( 'dedication', 'epigraph' ) as $compare ) {
 			foreach ( $book_contents['front-matter'] as $front_matter ) {
 
@@ -624,16 +643,14 @@ class Xhtml11 extends Export {
 				printf( $front_matter_printf,
 					$subclass,
 					$slug,
-					$i,
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					$this->doEndnotes( $id ) );
 
 				echo "\n";
-				++$i;
 			}
 		}
-		$this->frontMatterPos = $i;
 	}
 
 
@@ -666,7 +683,7 @@ class Xhtml11 extends Export {
 					}
 					foreach ( $part['chapters'] as $j => $chapter ) {
 
-						if ( ! $chapter['export'] )
+						if ( ! $chapter['export'] || get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) == 'on')
 							continue;
 
 						$subclass = \PressBooks\Taxonomy\chapter_type( $chapter['ID'] );
@@ -675,7 +692,12 @@ class Xhtml11 extends Export {
 						$subtitle = trim( get_post_meta( $chapter['ID'], 'pb_subtitle', true ) );
 						$author = trim( get_post_meta( $chapter['ID'], 'pb_section_author', true ) );
 
-						printf( '<li class="chapter %s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $subclass, $slug, Sanitize\decode( $title ) );
+                        $cnumber = pb_get_chapter_number($slug);
+                        if($cnumber === 0){
+                            printf( '<li class="chapter %s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $subclass, $slug, Sanitize\decode( $title ) );
+                        }else{
+                            printf( '<li class="chapter %s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $subclass, $slug, "chapter", $cnumber, Sanitize\decode( $title ) );
+                        }
 
 						if ( $subtitle )
 							echo ' <span class="chapter-subtitle">' . Sanitize\decode( $subtitle ) . '</span>';
@@ -684,26 +706,42 @@ class Xhtml11 extends Export {
 							echo ' <span class="chapter-author">' . Sanitize\decode( $author ) . '</span>';
 												
 						echo '</a>';
-						
-						if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
-							$sections = \PressBooks\Book::getChapterSubsections( $chapter['ID'] );
-							if ( $sections ) {
-								echo '<ul class="sections">';
-								foreach ( $sections as $section ) {
-									echo '<li class="section"><a href="#section-' . $s . '"><span class="toc-subsection-title">' . $section . '</span></a></li>';
-									 ++$s;
-								}
-								echo '</ul>';
-							}
-						}
+
+                        if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                            // Display headlines
+                            $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $chapter['ID'] );
+                            echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, '');
+                        }
 													
 						echo '</li>';
 					}
 				}
 			} else {
+                if(('back-matter' == $type && $this->listsPosition == 2)){
+                    $typetype = $type." loi";
+                    $slug = "loi";
+                    $title = __( 'List of Illustrations', 'pressbooks' );
+                    $cnumber = pb_get_chapter_number($slug);
+                    if($cnumber === 0){
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slug, Sanitize\decode( $title ) );
+                    }else{
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $typetype, $slug, $type, $cnumber, Sanitize\decode( $title ) );
+                    }
+                    $typetype = $type." lot";
+                    $slug = "lot";
+                    $title = __( 'List of Tables', 'pressbooks' );
+                    $cnumber = pb_get_chapter_number($slug);
+                    if($cnumber === 0){
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slug, Sanitize\decode( $title ) );
+                    }else{
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $typetype, $slug, $type, $cnumber, Sanitize\decode( $title ) );
+                    }
+                }
+
+                $first_frontmatter = true;
 				foreach ( $struct as $val ) {
 
-					if ( ! $val['export'] )
+					if ( ! $val['export']  || get_post_meta( $val['ID'], 'invisible-in-toc', true ) == 'on')
 						continue;
 
 					$typetype = '';
@@ -714,9 +752,32 @@ class Xhtml11 extends Export {
 
 					if ( 'front-matter' == $type ) {
 						$subclass = \PressBooks\Taxonomy\front_matter_type( $val['ID'] );
-						if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass ) {
-							continue; // Skip
+						if ('title-page' == $subclass) {
+                            continue; // Skip
 						} else {
+                            if('dedication' != $subclass && 'epigraph' != $subclass && 'before-title' != $subclass && $first_frontmatter){
+                                if($this->listsPosition == 1){
+                                $typetype = $type." loi";
+                                    $slugl = "loi";
+                                    $titlel = __( 'List of Illustrations', 'pressbooks' );
+                                    $cnumber = pb_get_chapter_number($slugl);
+                                    if($cnumber === 0){
+                                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slugl, Sanitize\decode( $titlel ) );
+                                    }else{
+                                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $typetype, $slugl, $type, $cnumber, Sanitize\decode( $titlel ) );
+                                    }
+                                    $typetype = $type." lot";
+                                    $slugl = "lot";
+                                    $titlel = __( 'List of Tables', 'pressbooks' );
+                                    $cnumber = pb_get_chapter_number($slugl);
+                                    if($cnumber === 0){
+                                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slugl, Sanitize\decode( $titlel ) );
+                                    }else{
+                                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $typetype, $slugl, $type, $cnumber, Sanitize\decode( $titlel ) );
+                                    }
+                                }
+                                $first_frontmatter = false;
+                            }
 							$typetype = $type . ' ' . $subclass;
 							$subtitle = trim( get_post_meta( $val['ID'], 'pb_subtitle', true ) );
 							$author = trim( get_post_meta( $val['ID'], 'pb_section_author', true ) );
@@ -727,7 +788,12 @@ class Xhtml11 extends Export {
 						$author = trim( get_post_meta( $val['ID'], 'pb_section_author', true ) );
 					}
 
-					printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slug, Sanitize\decode( $title ) );
+                    $cnumber = pb_get_chapter_number($slug);
+                    if($cnumber === 0){
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title">%s</span>', $typetype, $slug, Sanitize\decode( $title ) );
+                    }else{
+                        printf( '<li class="%s"><a href="#%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $typetype, $slug, $type, $cnumber, Sanitize\decode( $title ) );
+                    }
 
 					if ( $subtitle )
 						echo ' <span class="chapter-subtitle">' . Sanitize\decode( $subtitle ) . '</span>';
@@ -735,13 +801,73 @@ class Xhtml11 extends Export {
 					if ( $author )
 						echo ' <span class="chapter-author">' . Sanitize\decode( $author ) . '</span>';
 
-					echo '</a></li>';
+					echo '</a>';
+
+                    if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                        // Display headlines
+                        $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $val['ID'] );
+                        echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, '');
+                    }
+
+                    echo '</li>';
 				}
 			}
 		}
 		echo "</ul></div>\n";
 
 	}
+
+    /**
+     * @param array $book_contents
+     * @param array $metadata
+     */
+    protected function echoLists( $book_contents, $metadata ) {
+
+        if($this->listsPosition == 1){
+            $lists_printf = '<div class="front-matter %s" id="%s">';
+            $lists_printf .= '<div class="front-matter-title-wrap"><h3 class="front-matter-number">%s</h3><h1 class="front-matter-title">%s</h1></div>';
+            $lists_printf .= '<div class="ugc front-matter-ugc">%s</div>%s';
+            $lists_printf .= '</div>';
+        }else{
+            $lists_printf = '<div class="back-matter %s" id="%s">';
+            $lists_printf .= '<div class="back-matter-title-wrap"><h3 class="back-matter-number">%s</h3><h1 class="back-matter-title">%s</h1></div>';
+            $lists_printf .= '<div class="ugc back-matter-ugc">%s</div>%s';
+            $lists_printf .= '</div>';
+        }
+
+
+        $slug = "loi";
+        $title = __( 'List of Illustrations', 'pressbooks' );
+        $content = "[LOI]";
+        $content = $this->preProcessPostContent($content);
+
+
+        printf( $lists_printf,
+            "loi",
+            $slug,
+            pb_get_chapter_number($slug),
+            Sanitize\decode( $title ),
+            $content,
+            "" );
+
+        echo "\n";
+
+        $slug = "lot";
+        $title = __( 'List of Tables', 'pressbooks' );
+        $content = "[LOT]";
+        $content = $this->preProcessPostContent($content);
+
+
+        printf( $lists_printf,
+            "lot",
+            $slug,
+            pb_get_chapter_number($slug),
+            Sanitize\decode( $title ),
+            $content,
+            "" );
+
+        echo "\n";
+    }
 
 
 	/**
@@ -755,7 +881,6 @@ class Xhtml11 extends Export {
 		$front_matter_printf .= '<div class="ugc front-matter-ugc">%s</div>%s';
 		$front_matter_printf .= '</div>';
 
-		$i = $this->frontMatterPos;
 		foreach ( $book_contents['front-matter'] as $front_matter ) {
 
 			if ( ! $front_matter['export'] )
@@ -793,15 +918,13 @@ class Xhtml11 extends Export {
 			printf( $front_matter_printf,
 				$subclass,
 				$slug,
-				$i,
+                pb_get_chapter_number($slug),
 				Sanitize\decode( $title ),
 				$content,
 				$this->doEndnotes( $id ) );
 
 			echo "\n";
-			++$i;
 		}
-		$this->frontMatterPos = $i;
 	}
 
 
@@ -833,7 +956,7 @@ class Xhtml11 extends Export {
 		$chapter_printf .= '<div class="ugc chapter-ugc">%s</div>%s';
 		$chapter_printf .= '</div>';
 
-		$i = $j = 1;
+		$i = 1;
 		foreach ( $book_contents['part'] as $part ) {
 
 			$invisibility = ( get_post_meta( $part['ID'], 'pb_part_invisible', true ) == 'on' ) ? 'invisible' : '';
@@ -899,17 +1022,15 @@ class Xhtml11 extends Export {
 					$this->hasIntroduction = true;
 				}
 
-				$n = ( $subclass == 'numberless' ) ? '' : $j;
 				$my_chapters .= sprintf(
 					( $chapter_printf_changed ? $chapter_printf_changed : $chapter_printf ),
 					$subclass,
 					$slug,
-					$n,
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					$this->doEndnotes( $id ) ) . "\n";
 
-				if ( $subclass !== 'numberless' ) ++$j;
 			}
 
 			// Echo with parts?
@@ -943,7 +1064,6 @@ class Xhtml11 extends Export {
 		$back_matter_printf .= '<div class="ugc back-matter-ugc">%s</div>%s';
 		$back_matter_printf .= '</div>';
 
-		$i = 1;
 		foreach ( $book_contents['back-matter'] as $back_matter ) {
 
 			if ( ! $back_matter['export'] ) continue;
@@ -973,13 +1093,12 @@ class Xhtml11 extends Export {
 			printf( $back_matter_printf,
 				$subclass,
 				$slug,
-				$i,
+                pb_get_chapter_number($slug),
 				Sanitize\decode( $title ),
 				$content,
 				$this->doEndnotes( $id ) );
 
 			echo "\n";
-			++$i;
 		}
 
 	}
@@ -1006,5 +1125,179 @@ class Xhtml11 extends Export {
 
 		return false;
 	}
+
+
+    /**
+     * Override based on Theme Options
+     */
+    protected function themeOptionsOverrides() {
+
+
+        // --------------------------------------------------------------------
+        // Hacks
+
+        $hacks = array();
+        $hacks = apply_filters( 'pb_pdf_hacks', $hacks );
+
+        if ( @$hacks['lists_position'] ) {
+            $this->listsPosition = @$hacks['lists_position'];
+        }
+
+    }
+
+    /**
+     * A Hook handler for the chapter number, do to the rearrangements in the front matters
+     * @param $i the original number
+     * @param $post_name the post name
+     * @return int
+     */
+    function get_chapter_number($i, $post_name){
+
+        $lookup = \PressBooks\Book::getBookStructure();
+        $section = @$lookup['__export_lookup'][$post_name];
+
+        // Special for loi and lot
+        if($post_name == "loi"){
+            if($this->listsPosition == 2){
+                return 1;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+        if($post_name == "lot"){
+            if($this->listsPosition == 2){
+                return 2;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+
+        // Handle the different types
+        if($section == 'chapter'){
+            return $i;
+        }else if($section == 'back-matter'){
+            //If lists are in the back matter add to the number
+            if($this->listsPosition == 2){
+                return $i+2;
+            }else{
+                return $i;
+            }
+        }else if($section == 'front-matter'){
+            //Handle the numbers if the lists ar in the front matter
+            //The rearrangement does not need to be addressed, it is handled in the getBookStructure hook
+            if($this->listsPosition == 1){
+                $i = 0;
+                foreach ( $lookup['front-matter'] as $chapter ) {
+                    $p = get_posts( array( 'name' => $chapter['post_name'], 'post_type' => $section, 'post_status' => 'publish', 'numberposts' => 1 ) );
+                    $type = pb_get_section_type( $p[0] );
+                    if ( $type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on')  $i++;
+                    $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+                    if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass ){
+                        if($chapter['post_name'] == $post_name){
+                            return ($type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on') ? $i : 0;
+                        }
+                    }else{
+                        if($chapter['post_name'] == $post_name){
+                            return ($type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on') ? $i+2 : 0;
+                        }
+                        if($post_name == "loi"){
+                            return $i;
+                        }else if($post_name == "lot"){
+                            return $i+1;
+                        }
+                    }
+                }
+            }else{
+                return $i;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Returns the section type of a post hook - for loi and lot
+     * @param $section the default section
+     * @param $post_name the post name
+     * @return string
+     */
+    function get_chapter_number_section($section, $post_name){
+        if($post_name == "loi" || $post_name == "lot"){
+            if($this->listsPosition == 1){
+                return "front-matter";
+            }else if($this->listsPosition == 2){
+                return "back-matter";
+            }
+        }
+        return $section;
+    }
+
+    /**
+     * Rearanges the book structure for the getBookStructure Hook. Needed because of the rearrangements in the front matter
+     * @param $book_structure the original book structure
+     * @return mixed
+     */
+    function getBookStructure($book_structure){
+
+        $fm = $book_structure["front-matter"];
+        $fmn = array();
+
+        foreach ( $fm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+            if ( 'before-title' != $subclass )
+                continue; //Skip
+            $fmn[] = $chapter;
+        }
+
+        foreach ( array( 'dedication', 'epigraph' ) as $compare ) {
+            foreach ( $fm as $chapter ) {
+                if ( ! $chapter['export'] )
+                    continue; // Skip
+                $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+                if ( $compare != $subclass )
+                    continue; //Skip
+                $fmn[] = $chapter;
+            }
+        }
+
+        foreach ( $fm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+            if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass )
+                continue; // Skip
+            $fmn[] = $chapter;
+        }
+
+        $book_structure["front-matter"] = $fmn;
+
+
+        $c = $book_structure["chapter"];
+        $cn = array();
+
+        foreach ( $c as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $cn[] = $chapter;
+        }
+
+        $book_structure["chapter"] = $cn;
+
+
+
+        $bm = $book_structure["back-matter"];
+        $bmn = array();
+
+        foreach ( $bm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $bmn[] = $chapter;
+        }
+
+        $book_structure["back-matter"] = $bmn;
+
+        return $book_structure;
+    }
 
 }

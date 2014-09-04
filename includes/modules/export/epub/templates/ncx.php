@@ -17,7 +17,7 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 		including those conforming to the relaxed constraints of OPS 2.0 -->
 
 		<meta name="dtb:uid" content="<?php echo trim( $dtd_uid ); ?>" /> <!-- same as in .opf -->
-		<meta name="dtb:depth" content="2"/> <!-- 1 or higher -->
+		<meta name="dtb:depth" content="4"/> <!-- 1 or higher -->
 		<meta name="dtb:totalPageCount" content="0"/> <!-- must be 0 -->
 		<meta name="dtb:maxPageNumber" content="0"/> <!-- must be 0 -->
 	</head>
@@ -44,10 +44,19 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 				echo '</navPoint>';
 			}
 
+            if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+                continue;
+            }
+
 			if ( get_post_meta( $v['ID'], 'pb_part_invisible', true ) !== 'on' ) {
 
 				$text = strip_tags( \PressBooks\Sanitize\decode( $v['post_title'] ) );
 				if ( ! $text ) $text = ' ';
+
+                $cnumber = pb_get_chapter_number($v['post_name']);
+                if($cnumber !== 0){
+                    $text = $cnumber." - ".$text;
+                }
 	
 				printf( '
 					<navPoint id="%s" playOrder="%s">
@@ -58,6 +67,41 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 				if ( preg_match( '/^part-/', $k ) ) {
 					$part_open = true;
 				} else {
+                    if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                        $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
+                        if(is_a($subtitle, "\PressBooks\Lists\ListChapter")){
+                            $subtitle = $subtitle->getHierarchicalArray();
+                        }
+                        if(count($subtitle["childNodes"])>0){
+                        foreach($subtitle["childNodes"] as $subtitle){
+                            if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
+                            $i++;
+                            $text = \PressBooks\Lists\ListNodeShow::get_caption_prefix($subtitle).\PressBooks\Lists\ListNodeShow::get_caption($subtitle);
+                            printf( '
+                                <navPoint id="%s" playOrder="%s">
+                                <navLabel><text>%s</text></navLabel>
+                                <content src="OEBPS/%s" />
+                                ', $subtitle["id"], $i, $text, $v['filename']."#".$subtitle["id"] );
+                                if(count($subtitle["childNodes"])>0){
+                                foreach($subtitle["childNodes"] as $subtitle){
+                                    if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
+                                        $i++;
+                                        $text = \PressBooks\Lists\ListNodeShow::get_caption_prefix($subtitle).\PressBooks\Lists\ListNodeShow::get_caption($subtitle);
+                                        printf( '
+                                            <navPoint id="%s" playOrder="%s">
+                                            <navLabel><text>%s</text></navLabel>
+                                            <content src="OEBPS/%s" />
+                                            ', $subtitle["id"], $i, $text, $v['filename']."#".$subtitle["id"] );
+
+                                        echo '</navPoint>';
+                                    }
+                                }
+                                }
+                            echo '</navPoint>';
+                            }
+                        }
+                        }
+                    }
 					echo '</navPoint>';
 				}
 				

@@ -342,7 +342,8 @@ function pressbooks_theme_options_global_init() {
 	$_page = $_option = 'pressbooks_theme_options_global';
 	$_section = 'global_options_section';
 	$defaults = array(
-		'chapter_numbers' => 1
+		'chapter_numbers' => 1,
+        'lists_position' => 0,
 	);
 
 	if ( false == get_option( $_option ) ) {
@@ -377,6 +378,19 @@ function pressbooks_theme_options_global_init() {
 			 __( 'Enable a two-level TOC', 'pressbooks' )
 		)
 	);
+
+    add_settings_field(
+        'lists_position',
+        __( 'Position of Lists', 'pressbooks' ),
+        'pressbooks_theme_lists_position_callback',
+        $_page,
+        $_section,
+        array(
+            __( 'Do not display', 'pressbooks' ),
+            __( 'In Front-Matters', 'pressbooks' ),
+            __( 'In Back-Matters', 'pressbooks' ),
+        )
+    );
 
 	register_setting(
 		$_option,
@@ -421,6 +435,21 @@ function pressbooks_theme_parse_sections_callback( $args ) {
 	echo $html;
 }
 
+function pressbooks_theme_lists_position_callback( $args ){
+    $options = get_option( 'pressbooks_theme_options_global' );
+
+    if ( ! isset( $options['lists_position'] ) ) {
+        $options['lists_position'] = 0;
+    }
+
+    $html = "<select name='pressbooks_theme_options_global[lists_position]' id='lists_position' >";
+    foreach ( $args as $key => $val ) {
+        $html .= "<option value='" . ( $key ) . "' " . selected( $key , $options['lists_position'], false ) . ">$val</option>";
+    }
+    $html .= '<select>';
+    echo $html;
+}
+
 // Global Options Input Sanitization
 function pressbooks_theme_options_global_sanitize( $input ) {
 
@@ -437,6 +466,8 @@ function pressbooks_theme_options_global_sanitize( $input ) {
 	} else {
 		$options['parse_sections'] = 1;
 	}
+
+    $options['lists_position'] = absint( $input['lists_position'] );
 
 	return $options;
 }
@@ -1047,6 +1078,16 @@ add_filter( 'pb_epub_css_override', 'pressbooks_theme_ebook_css_override' );
 
 function pressbooks_theme_pdf_hacks( $hacks ) {
 
+    // --------------------------------------------------------------------
+    // Global Options
+
+    $options = get_option( 'pressbooks_theme_options_global' );
+
+    $hacks['lists_position'] = $options['lists_position'];
+
+    // --------------------------------------------------------------------
+    // Pdf Options
+
 	$options = get_option( 'pressbooks_theme_options_pdf' );
 
 	// 1 = Footnotes (default), 2 = Endnotes
@@ -1066,6 +1107,7 @@ function pressbooks_theme_ebook_hacks( $hacks ) {
 
 	// Display chapter numbers?
 	$hacks['chapter_numbers'] = $options['chapter_numbers'];
+    $hacks['lists_position'] = $options['lists_position'];
 
 	// --------------------------------------------------------------------
 	// Ebook Options

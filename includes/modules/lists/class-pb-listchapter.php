@@ -22,21 +22,27 @@ class ListChapter {
     public $list;
 
     /**
-     * @var int the id of the post
-     */
-    public $number;
-    /**
      * @var array all the nodes of the chapter
      */
     public $child;
+    /**
+     * @var int the id of the post
+     */
+    public $pid;
+    /**
+     * @var string the type of the post
+     */
+    public $type;
 
     /**
      * @param \PressBooks\Lists\iList $list the list the chapter is in
-     * @param int $number the id of the post
+     * @param int $pid the pid
+     * @param string $type the type of the content
      */
-    function __construct($list = null, $number){
+    function __construct($list = null, $pid, $type){
         $this->list = $list;
-        $this->number = $number;
+        $this->pid = $pid;
+        $this->type = $type;
         $this->child = array();
     }
 
@@ -56,7 +62,7 @@ class ListChapter {
      */
     function getNumberingOfChild($child){
         $cna = array();
-        $cna[] = $this->number;
+        $cna[] = "";
         if(is_array($this->list->getTypes())){
             foreach($this->list->getTypes() as $type){
                 $cna[] = 0;
@@ -79,6 +85,30 @@ class ListChapter {
     }
 
     /**
+     * Returns a ongoing numbers representing the position of the child
+     * @param \PressBooks\Lists\ListNode $child
+     * @return int
+     */
+    function getOnGoingNumberOfChild($child){
+        $i = 0;
+        $p = get_post( $this->pid );
+        $type = pb_get_section_type( $p );
+        if( $type == 'numberless' || get_post_meta( $this->pid, 'invisible-in-toc', true ) == 'on'){
+            return(0);
+        }
+        foreach($this->child as $node){
+            if($node->active){
+                $i++;
+                if($node === $child){
+                    return($i);
+                }
+            }
+
+        }
+        return(-$i);
+    }
+
+    /**
      * Returns an array of nodes.
      * All nodes are childs of the array
      * Active and Inactive ones
@@ -93,12 +123,28 @@ class ListChapter {
     }
 
     /**
+     * Returns an array of nodes and Chapters.
+     * All nodes are children of the array
+     * Active and Inactive ones
+     * @return array
+     */
+    function getFlatArrayWithChapter(){
+        $out = array();
+        $out[$this->pid] = array("pid"=>$this->pid, "type"=>$this->type);
+        foreach($this->child as $child){
+            $out[$child->id] = $child->getNodeAsArray();
+        }
+        return($out);
+    }
+
+    /**
      * Returns an array representing the hierarchy of the nodes
      * Only active nodes
      * @return array
      */
     function getHierarchicalArray(){
         $out = array();
+        $out["pid"] = $this->pid;
         $out["childNodes"] = array();
         foreach($this->child as $child){
             if($child->active){

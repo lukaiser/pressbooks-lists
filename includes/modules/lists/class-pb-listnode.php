@@ -84,8 +84,8 @@ class ListNode {
         $out["id"] = $this->id;
         $out["pid"] = $this->pid;
         $out["type"] = $this->type;
-        $out["number"] = $this->number;
         $out["numberArray"] = $this->getNumbering();
+        $out["onGoingNumber"] = $this->list->getOnGoingNumberOfChild($this);
         $out["caption"] = $this->caption;
         $out["active"] = $this->active;
         return $out;
@@ -109,13 +109,10 @@ class ListNode {
      */
     function __get($property) {
 
-        if($property == "number"){
-            return implode(".", $this->getNumbering());
-        }
-
         if (property_exists($this, $property)) {
             return $this->$property;
         }
+        return "";
     }
 
 } 

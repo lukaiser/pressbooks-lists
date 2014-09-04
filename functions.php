@@ -214,24 +214,50 @@ function pb_get_chapter_number( $post_name ) {
 	if ( ! @$options['chapter_numbers'] )
 		return 0;
 
-	$lookup = \PressBooks\Book::getBookStructure();
-	$lookup = $lookup['__export_lookup'];
 
-	if ( 'chapter' != @$lookup[$post_name] )
-		return 0;
+    $lookup = \PressBooks\Book::getBookStructure();
+    $lookup = $lookup['__export_lookup'];
+    $section = @$lookup[$post_name];
 
-	$i = 0;
-	foreach ( $lookup as $key => $val ) {
-		if ( 'chapter' == $val ) {
-			$chapter = get_posts( array( 'name' => $key, 'post_type' => 'chapter', 'post_status' => 'publish', 'numberposts' => 1 ) );
-			$type = pb_get_section_type( $chapter[0] );
-			if ( $type !== 'numberless' ) ++$i;
-			if ( $key == $post_name ) break;
-		}
-	}
-	
-	if ( $type == 'numberless' ) $i = 0;
-	return $i;
+    /**
+     * Filter the chapter number section
+     *
+     * @param string $out  The original section
+     * @param string $post_name  The post name
+     */
+    $section = apply_filters( 'pb_get_chapter_number_section', $section, $post_name );
+
+    $i = 0;
+    if ( 'chapter' == @$lookup[$post_name]  || 'front-matter' == @$lookup[$post_name] || 'back-matter' == @$lookup[$post_name]){
+        foreach ( $lookup as $key => $val ) {
+            if ( $section == $val ) {
+                $chapter = get_posts( array( 'name' => $key, 'post_type' => $section, 'post_status' => 'publish', 'numberposts' => 1 ) );
+                $type = pb_get_section_type( $chapter[0] );
+                if ( $type !== 'numberless' && get_post_meta( $chapter[0]->ID, 'invisible-in-toc', true ) !== 'on') ++$i;
+                if ( $key == $post_name ) break;
+            }
+        }
+        if ( $type == 'numberless' || get_post_meta( $chapter[0]->ID, 'invisible-in-toc', true ) == 'on') $i = 0;
+    }
+
+    /**
+     * Filter the chapter number
+     *
+     * @param int $number  The original number
+     * @param string $post_name  The post name
+     */
+    $i = apply_filters( 'pb_get_chapter_number', $i, $post_name );
+
+    $out = 0;
+    if($section == 'chapter'){
+	    $out = $i;
+    }else if($section == 'front-matter'){
+        $out = \PressBooks\L10n\romanize( $i );
+    }else if($section == 'back-matter'){
+        $out =  \PressBooks\L10n\abcize( $i-1 );
+    }
+
+    return $out;
 }
 
 /**

@@ -1,0 +1,68 @@
+.wp-list-table .inactive, .wp-list-table .chapterinactive{
+    /* for "disabled" effect */
+    opacity: 0.5;
+    background: #CCC;
+}
+.wp-list-table .chapterinactive input[type=checkbox]:checked:before{
+    color: #CCC;
+}
+.wp-list-table .inactive:not(.chapterinactive) .active input[type=checkbox]{
+    border-color: #000;
+}
+.wp-list-table .inactive:not(.chapterinactive) .active{
+    opacity: 1;
+}
+.wp-list-table .inactive.chapter .active{
+    opacity: 1;
+}
+.wp-list-table .inactive.chapter .active input[type=checkbox]{
+    border-color: #000;
+}
+.wp-list-table .column-number{
+    width: 160px;
+}
+.wp-list-table .column-type{
+    width: 160px;
+}
+.wp-list-table .column-active{
+    width: 90px;
+}
+.wp-list-table .column-reverence{
+    width: 75px;
+}
+
+
+.wp-list-table tr.part td{
+    color: #b40026;
+    font-weight: bold;
+}
+.order-number-asc .wp-list-table tr.part td, .order-number-asc .wp-list-table tr.part th{
+    border-bottom: 1px solid #b40026;
+    border-top: 1px solid #b40026;
+}
+.order-number-desc .wp-list-table tr.part td, .order-number-desc .wp-list-table tr.part th{
+    border-top: 1px solid #b40026;
+    border-bottom: 1px solid #b40026;
+}
+
+.order-number-asc .wp-list-table tr.lastFrontMatter td, .order-number-asc .wp-list-table tr.lastFrontMatter th{
+    border-bottom: 15px solid #b40026;
+}
+.order-number-desc .wp-list-table tr.lastFrontMatter td, .order-number-desc .wp-list-table tr.lastFrontMatter th{
+    border-top: 15px solid #b40026;
+}
+
+.order-number-asc .wp-list-table tr.firstBackMatter td, .order-number-asc .wp-list-table tr.firstBackMatter th{
+    border-top: 15px solid #b40026;
+}
+.order-number-desc .wp-list-table tr.firstBackMatter td, .order-number-desc .wp-list-table tr.firstBackMatter th{
+    border-bottom: 15px solid #b40026;
+}
+
+
+.chapter-number-panel{
+    padding-bottom: 15px;
+}
+.chapter-number-panel .dashicons{
+    margin-right: 5px;
+}

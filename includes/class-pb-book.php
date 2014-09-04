@@ -142,6 +142,7 @@ class Book {
 		// Query our custom post types, keep minimal data in $book_structure
 		// -----------------------------------------------------------------------------
 
+        static::$fixDupeSlugs = array();
 		$book_structure = array();
 
 		$custom_types = array(
@@ -187,6 +188,13 @@ class Book {
 			}
 
 		}
+
+        /**
+         * Filter the book structure
+         *
+         * @param string $book_structure  The book structure
+         */
+        $book_structure = apply_filters( 'pb_getBookStructure', $book_structure );
 
 		// -----------------------------------------------------------------------------
 		// Add Chapters to Parts

@@ -126,6 +126,12 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 		<reference type="toc" title="Table of Contents" href="OEBPS/table-of-contents.html" />
 		<reference type="cover" title="cover" href="OEBPS/front-cover.html" />
 		<?php
+        foreach($manifest as $key => $val){
+            if ( $val['ID'] == "loi" || $val['ID'] == "lot"){
+                printf( '<reference type="%s" title="%s" href="OEBPS/%s" />', $val['ID'], $val['post_title'], $val['filename']);
+                echo "\n";
+            }
+        }
 
 		/* Set the EPUB's start-point */
 

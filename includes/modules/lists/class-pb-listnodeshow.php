@@ -22,11 +22,30 @@ class ListNodeShow {
     /**
      * Returns a string representing the node for a list view
      * @param \PressBooks\Lists\ListNode $node the node
+     * @param string $link href for the link
      * @return string
      */
-    static function get_list_string($node){
+    static function get_list_string($node, $link=false){
         $node = static::get_the_array($node);
-        $output = '<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_number($node)." - ".static::get_caption($node).'</a>';
+        if($link === false){
+            $link = get_permalink($node["pid"]);
+        }
+        $hasnum = true;
+        if($node["type"] == "h1" || $node["type"] == "h2" || $node["type"] == "h3" || $node["type"] == "h4" || $node["type"] == "h5" || $node["type"] == "h6"){
+            $options = get_option( 'pressbooks_theme_options_global' );
+            if (!@$options['chapter_numbers'] ){
+                $hasnum = false;
+            }
+        }
+        $p = get_post( $node['pid'] );
+        $type = pb_get_section_type( $p );
+        if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on' && $hasnum){
+            $output = '<a class="rev-link" href="'.$link.'#'.$node["id"].'"><span class="list-number">'.static::get_number($node)." - </span>".static::get_caption($node).'</a>';
+        }else{
+            $output = '<a class="rev-link" href="'.$link.'#'.$node["id"].'">'.static::get_caption($node).'</a>';
+        }
+
+
         /**
          * Filter the default lists list string output.
          *
@@ -44,7 +63,13 @@ class ListNodeShow {
      */
     static function get_rev_string($node){
         $node = static::get_the_array($node);
-        $output = '( '.'<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_acronym($node).": ".static::get_number($node).'</a>'.' )';
+        $p = get_post( $node['pid'] );
+        $type = pb_get_section_type( $p );
+        if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
+            $output = '( '.'<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_acronym($node).": ".static::get_number($node).'</a>'.' )';
+        }else{
+            $output = '( '.'<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_acronym($node).": ".static::get_caption($node).'</a>'.' )';
+        }
         /**
          * Filter the default lists reference string output.
          *
@@ -52,6 +77,7 @@ class ListNodeShow {
          * @param array  $node    The node
          */
         $output = apply_filters( 'pb_lists_show_rev_string', $output, $node );
+
         return($output);
     }
 
@@ -62,10 +88,21 @@ class ListNodeShow {
      */
     static function get_caption_prefix($node){
         $node = static::get_the_array($node);
-        if($node["type"] == "img" || $node["type"] == "table"){
-            $output = static::get_acronym($node)." ".static::get_number($node).": ";
+        $p = get_post( $node['pid'] );
+        $type = pb_get_section_type( $p );
+        if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
+            if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
+                $output = static::get_acronym($node)." ".static::get_number($node).": ";
+            }else{
+                $options = get_option( 'pressbooks_theme_options_global' );
+                if (@$options['chapter_numbers'] ){
+                    $output = static::get_number($node)." - ";
+                }else{
+                    $output = "";
+                }
+            }
         }else{
-            $output = static::get_number($node)." - ";
+            $output = "";
         }
         /**
          * Filter the default lists caption prefix string output.
@@ -88,7 +125,9 @@ class ListNodeShow {
      */
     static function get_caption($node){
         $node = static::get_the_array($node);
-        $output = apply_filters( 'the_content', $node["caption"] );
+        $output = $node["caption"];
+        $output = strip_shortcodes($output);
+        //$output = apply_filters( 'the_content', $node["caption"] ); //Because it replaces already running the_content filters
         $output = strip_tags($output);
         /**
          * Filter the default lists caption string output.
@@ -106,8 +145,20 @@ class ListNodeShow {
      * @return string
      */
     static function get_number($node){
-        $node = static::get_the_array($node);
-        $output = implode(".", $node["numberArray"]);
+        $output = "";
+        if($node["active"]){
+            $options = get_option( 'pressbooks_theme_options_global' );
+            if (@$options['chapter_numbers'] ){
+                $node = static::get_the_array($node);
+                $post = get_post($node["pid"]);
+                $node["numberArray"][0] = pb_get_chapter_number($post->post_name);
+                $output = implode(".", $node["numberArray"]);
+            }else{
+                if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
+                    $output = $node["onGoingNumber"];
+                }
+            }
+        }
         /**
          * Filter the default lists number string output.
          *

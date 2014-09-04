@@ -42,9 +42,18 @@ foreach ( $manifest as $k => $v ) {
 		echo '</navPoint>';
 	}
 
+    if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+        continue;
+    }
+
 	if ( get_post_meta( $v['ID'], 'pb_part_invisible', true ) !== 'on' ) {
 		$text = strip_tags( \PressBooks\Sanitize\decode( $v['post_title'] ) );
 		if ( ! $text ) $text = ' ';
+
+        $cnumber = pb_get_chapter_number($v['post_name']);
+        if($cnumber !== 0){
+            $text = $cnumber." - ".$text;
+        }
 
 		printf( '
 				<navPoint id="%s" playOrder="%s">
@@ -55,6 +64,41 @@ foreach ( $manifest as $k => $v ) {
 		if ( preg_match( '/^part-/', $k ) ) {
 			$part_open = true;
 		} else {
+            if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
+                if(is_a($subtitle, "\PressBooks\Lists\ListChapter")){
+                    $subtitle = $subtitle->getHierarchicalArray();
+                }
+                if(count($subtitle["childNodes"])>0){
+                    foreach($subtitle["childNodes"] as $subtitle){
+                        if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
+                            $i++;
+                            $text = \PressBooks\Lists\ListNodeShow::get_caption_prefix($subtitle).\PressBooks\Lists\ListNodeShow::get_caption($subtitle);
+                            printf( '
+                                <navPoint id="%s" playOrder="%s">
+                                <navLabel><text>%s</text></navLabel>
+                                <content src="OEBPS/%s" />
+                                ', $subtitle["id"], $i, $text, $v['filename']."#".$subtitle["id"] );
+                            if(count($subtitle["childNodes"])>0){
+                                foreach($subtitle["childNodes"] as $subtitle){
+                                    if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
+                                        $i++;
+                                        $text = \PressBooks\Lists\ListNodeShow::get_caption_prefix($subtitle).\PressBooks\Lists\ListNodeShow::get_caption($subtitle);
+                                        printf( '
+                                            <navPoint id="%s" playOrder="%s">
+                                            <navLabel><text>%s</text></navLabel>
+                                            <content src="OEBPS/%s" />
+                                            ', $subtitle["id"], $i, $text, $v['filename']."#".$subtitle["id"] );
+
+                                        echo '</navPoint>';
+                                    }
+                                }
+                            }
+                            echo '</navPoint>';
+                        }
+                    }
+                }
+            }
 			echo '</navPoint>';
 		}
 

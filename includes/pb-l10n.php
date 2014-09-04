@@ -357,6 +357,26 @@ function romanize( $integer, $upcase = true ) {
 	return $return;
 }
 
+/**
+ * Convert integer to ABC numeral
+ *
+ * @param      $integer
+ * @param bool $upcase
+ *
+ * @return string
+ */
+function abcize( $integer, $upcase = true ) {
+
+    $n = absint( $integer );
+
+    $r = '';
+    for ($j = 1; $n >= 0 && $j < 10; $j++) {
+        $r = chr(0x41 + ($n % pow(26, $j) / pow(26, $j - 1))) . $r;
+        $n -= pow(26, $j);
+    }
+    return  $r;
+}
+
 
 /**
  * Use the book locale to load POT translations?

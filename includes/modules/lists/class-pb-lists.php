@@ -36,6 +36,8 @@ class Lists {
     static function init_hooks( ){
         add_filter( 'the_content', '\PressBooks\Lists\Lists::handle_content', 20 );
         add_shortcode( 'rev', '\PressBooks\Lists\Lists::handle_rev_shortcode' );
+        add_shortcode( 'LOT', '\PressBooks\Lists\Lists::handle_LOT_shortcode' );
+        add_shortcode( 'LOI', '\PressBooks\Lists\Lists::handle_LOI_shortcode' );
     }
 
     /**********************
@@ -53,27 +55,11 @@ class Lists {
     }
 
     /**
-     * Adds Lists to chapters with the right section type and adds prefix to captions
+     * Adds prefix to captions
      * @param $content
      * @return string
      */
     static function handle_content($content){
-
-        $conf = array();
-        $conf["list-of-tables"] = "table";
-        $conf["abstracts"] = "h";
-        $conf["list-of-illustrations"] = "img";
-
-        if(trim($content) == ""){
-            global $id;
-            $post = get_post($id);
-            $type = pb_get_section_type($post);
-
-            if(array_key_exists($type, $conf)){
-                $bl = \PressBooks\Lists\Lists::get_book_lists();
-                return ListShow::hierarchical_list($bl[$conf[$type]]);
-            }
-        }
 
         $bl = \PressBooks\Lists\Lists::get_book_lists();
         foreach($bl as $l){
@@ -89,7 +75,8 @@ class Lists {
         error_reporting(E_ERROR | E_PARSE);
         $GLOBALS["hook_suffix"] = $_REQUEST["hook_suffix"];
         if(! empty( $_REQUEST['list_type'] ) && in_array($_REQUEST['list_type'], array("img", "h", "table"))){ //TODO lists
-            $list_table = new \PressBooks\Lists\Lists_List_Table($_REQUEST['list_type']);
+            $chapters = $_REQUEST['list_type'] == "h";
+            $list_table = new \PressBooks\Lists\Lists_List_Table($_REQUEST['list_type'], $chapters);
             $list_table->ajax_response();
         }
     }
@@ -134,6 +121,26 @@ class Lists {
         return ListNodeShow::get_rev_string(static::get_list_node_by_id($id));
     }
 
+    /**
+     * Handles the list of table (LOT) shortcode
+     * @param $atts
+     * @return string
+     */
+    static function handle_LOT_shortcode($atts){
+        $bl = \PressBooks\Lists\Lists::get_book_lists();
+        return ListShow::hierarchical_list($bl["table"]);
+    }
+
+    /**
+     * Handles the list of figure (LOF) shortcode
+     * @param $atts
+     * @return string
+     */
+    static function handle_LOI_shortcode($atts){
+        $bl = \PressBooks\Lists\Lists::get_book_lists();
+        return ListShow::hierarchical_list($bl["img"]);
+    }
+
     /**********************
      * Functions
      **********************/
@@ -176,7 +183,7 @@ class Lists {
             foreach ( $struct as $i => $val ) {
 
                 if ( isset( $val['post_content'] ) ) {
-                    static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $idsAndClasses);
+                    static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $val['post_type'], $idsAndClasses);
                 }
 
                 if ( 'part' == $type ) {
@@ -185,7 +192,7 @@ class Lists {
                     foreach ( $book_contents[$type][$i]['chapters'] as $j => $val2 ) {
 
                         if ( isset( $val2['post_content'] ) ) {
-                            static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $idsAndClasses);
+                            static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $val2['post_type'], $idsAndClasses);
                         }
 
                     }
@@ -219,6 +226,20 @@ class Lists {
         return(false);
     }
 
+    /**
+     * Get a chapter of a List
+     * @param string $list list type
+     * @param string $id PID of chapter
+     * @return ListChapter|false
+     */
+    static function get_chapter_list_by_pid($list, $id){
+        $bl = static::get_book_lists();
+        if(array_key_exists($list, $bl)){
+            return($bl[$list]->getChapterByPid($id));
+        }
+        return(false);
+    }
+
     /**********************
      * Private Functions
      **********************/
@@ -228,9 +249,10 @@ class Lists {
      * @param array $lists the lists
      * @param string $content the content of the chapter
      * @param int $pid the id of the post
+     * @param string $type the type of the content
      * @param bool $idsAndClasses If Ids and in-list class should be added to DOMElements not having them
      */
-    private static function get_book_lists__handle_chapter($lists, $content, $pid, $idsAndClasses = false){
+    private static function get_book_lists__handle_chapter($lists, $content, $pid, $type, $idsAndClasses = false){
         if($idsAndClasses){
             $changed = false;
             foreach($lists as $list){
@@ -249,7 +271,7 @@ class Lists {
             }
         }
         foreach($lists as $list){
-            $list->addContentToList($content, $pid);
+            $list->addContentToList($content, $pid, $type);
         }
     }
 

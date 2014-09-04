@@ -19,8 +19,9 @@ interface iList {
      * Add a the content of a post to the list
      * @param string $content the content of the post
      * @param int $pid the id of the post
+     * @param string $type the type of the content
      */
-    function addContentToList($content, $pid);
+    function addContentToList($content, $pid, $type);
 
     /**
      * Adds missing html ids and in-list and not-in-list classes to a post
@@ -52,6 +53,14 @@ interface iList {
     function getFlatArray();
 
     /**
+     * Returns an array of nodes and Chapters.
+     * All nodes are children of the array
+     * Active and Inactive ones
+     * @return array
+     */
+    function getFlatArrayWithChapter();
+
+    /**
      * Returns an array representing the hierarchy of the nodes
      * Chapters are represented too
      * Only active nodes
@@ -78,4 +87,18 @@ interface iList {
      * @return string
      */
     function addCaptionPrefix($content);
+
+    /**
+     * Get the ListChapter by the PID
+     * @param int $pid the PID
+     * @return \PressBooks\Lists\ListChapter|false
+     */
+    function getChapterByPid($pid);
+
+    /**
+     * Returns a ongoing numbers representing the position of the child
+     * @param \PressBooks\Lists\ListNode $child
+     * @return int
+     */
+    function getOnGoingNumberOfChild($child);
 } 

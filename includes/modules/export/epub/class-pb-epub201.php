@@ -138,6 +138,16 @@ class Epub201 extends Export {
 	 * $var string
 	 */
 	protected $suffix = '.epub';
+
+    /**
+     * Position of lists
+     *
+     * 0 = Don not display
+     * 1 = In front matter
+     * 2 = In back matter
+     * @var int
+     */
+    protected $listsPosition = 0;
 	
 	
 	/**
@@ -194,6 +204,13 @@ class Epub201 extends Export {
 
 		// Convert
 
+        //Filters for the chapter numbers and the books structure, do to the rearangements in the front-matter
+        add_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10, 2 );
+        add_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10, 2 );
+        add_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
+
+
+        $this->setListShortcodes();
 		$metadata = \PressBooks\Book::getBookInformation();
 		$book_contents = $this->preProcessBookContents( \PressBooks\Book::getBookContents() );
 
@@ -206,16 +223,26 @@ class Epub201 extends Export {
 
 		} catch ( \Exception $e ) {
 			$this->logError( $e->getMessage() );
-
+            $this->resetListShortcodes();
+            remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
+            remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
+            remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
 			return false;
 		}
 
 		$filename = $this->timestampedFileName( $this->suffix );
 		if ( ! $this->zipEpub( $filename ) ) {
+            $this->resetListShortcodes();
+            remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
+            remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
+            remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
 			return false;
 		}
 		$this->outputPath = $filename;
-
+        $this->resetListShortcodes();
+        remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
+        remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
+        remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
 		return true;
 	}
 
@@ -318,6 +345,10 @@ class Epub201 extends Export {
 		if ( @$hacks['ebook_compress_images'] ) {
 			$this->compressImages = true;
 		}
+
+        if ( @$hacks['lists_position'] ) {
+            $this->listsPosition = @$hacks['lists_position'];
+        }
 
 	}
 
@@ -524,6 +555,11 @@ class Epub201 extends Export {
 		// Dedication and Epigraph (In that order!)
 		$this->createDedicationAndEpigraph( $book_contents, $metadata );
 
+        // Lists
+        if($this->listsPosition == 1){
+            $this->createLists( $book_contents, $metadata);
+        }
+
 		// Front-matter
 		$this->createFrontMatter( $book_contents, $metadata );
 
@@ -532,6 +568,11 @@ class Epub201 extends Export {
 
 		// Parts, Chapters
 		$this->createPartsAndChapters( $book_contents, $metadata );
+
+        // Lists
+        if($this->listsPosition == 2){
+            $this->createLists( $book_contents, $metadata);
+        }
 
 		// Back-matter
 		$this->createBackMatter( $book_contents, $metadata );
@@ -690,6 +731,7 @@ class Epub201 extends Export {
 			'ID' => -1,
 			'post_title' => $vars['post_title'],
 			'filename' => $filename,
+            'post_name' => 'front-cover',
 		);
 
 	}
@@ -734,12 +776,12 @@ class Epub201 extends Export {
 				$vars['post_content'] = sprintf( $front_matter_printf,
 					$subclass,
 					$slug,
-					$i,
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					'' );
 
-				$file_id = 'front-matter-' . sprintf( "%03s", $i );
+				$file_id = 'front-matter-' . sprintf( "%03s", $this->get_file_number($slug) );
 				$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 				file_put_contents(
@@ -750,6 +792,7 @@ class Epub201 extends Export {
 					'ID' => $front_matter['ID'],
 					'post_title' => $front_matter['post_title'],
 					'filename' => $filename,
+                    'post_name' => $slug,
 				);
 
 				++$i;
@@ -818,6 +861,7 @@ class Epub201 extends Export {
 			'ID' => -1,
 			'post_title' => $vars['post_title'],
 			'filename' => $filename,
+            'post_name' => 'title-page',
 		);
 
 	}
@@ -872,6 +916,7 @@ class Epub201 extends Export {
 			'ID' => - 1,
 			'post_title' => $vars['post_title'],
 			'filename' => $filename,
+            'post_name' => 'copyright',
 		);
 
 	}
@@ -917,12 +962,12 @@ class Epub201 extends Export {
 				$vars['post_content'] = sprintf( $front_matter_printf,
 					$subclass,
 					$slug,
-					$i,
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					'' );
 
-				$file_id = 'front-matter-' . sprintf( "%03s", $i );
+				$file_id = 'front-matter-' . sprintf( "%03s", $this->get_file_number($slug) );
 				$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 				file_put_contents(
@@ -933,6 +978,7 @@ class Epub201 extends Export {
 					'ID' => $front_matter['ID'],
 					'post_title' => $front_matter['post_title'],
 					'filename' => $filename,
+                    'post_name' => $slug,
 				);
 
 				++$i;
@@ -942,6 +988,108 @@ class Epub201 extends Export {
 		$this->frontMatterPos = $i;
 		if ( $last_pos ) $this->frontMatterLastPos = $last_pos - 1;
 	}
+
+    /**
+     * @param array $book_contents
+     * @param array $metadata
+     */
+    protected function createLists( $book_contents, $metadata ) {
+
+        if($this->listsPosition == 1){
+            $lists_printf = '<div class="front-matter %s" id="%s">';
+            $lists_printf .= '<div class="front-matter-title-wrap"><h3 class="front-matter-number">%s</h3><h1 class="front-matter-title">%s</h1></div>';
+            $lists_printf .= '<div class="ugc front-matter-ugc">%s</div>%s';
+            $lists_printf .= '</div>';
+
+            $i = $this->frontMatterPos;
+            $type = "front-matter";
+        }else if($this->listsPosition == 2){
+            $lists_printf = '<div class="back-matter %s" id="%s">';
+            $lists_printf .= '<div class="back-matter-title-wrap"><h3 class="back-matter-number">%s</h3><h1 class="back-matter-title">%s</h1></div>';
+            $lists_printf .= '<div class="ugc back-matter-ugc">%s</div>%s';
+            $lists_printf .= '</div>';
+
+            $i = 1;
+            $type = "back-matter";
+        }
+
+        $vars = array(
+            'post_title' => '',
+            'stylesheet' => $this->stylesheet,
+            'post_content' => '',
+            'isbn' => @$metadata['pb_ebook_isbn'],
+        );
+
+
+
+
+
+            $slug = "loi";
+            $title = __( 'List of Illustrations', 'pressbooks' );
+            $content = "[LOI]";
+            $content = $this->preProcessPostContent($content);
+            $content = $this->kneadHtml( $content, $type, $i );
+
+            $vars['post_title'] = __( 'List of Illustrations', 'pressbooks' );
+            $vars['post_content'] = sprintf( $lists_printf,
+                "loi",
+                $slug,
+                pb_get_chapter_number($slug),
+                Sanitize\decode( $title ),
+                $content,
+                '' );
+
+            $file_id = $type.'-' . sprintf( "%03s", $this->get_file_number($slug) );
+            $filename = "{$file_id}-{$slug}.{$this->filext}";
+
+            file_put_contents(
+                $this->tmpDir . "/OEBPS/$filename",
+                $this->loadTemplate( $this->dir . '/templates/xhtml.php', $vars ) );
+
+            $this->manifest[$file_id] = array(
+                'ID' => "loi",
+                'post_title' => __( 'List of Illustrations', 'pressbooks' ),
+                'filename' => $filename,
+                'post_name' => 'loi',
+            );
+
+            ++$i;
+
+            $slug = "lot";
+            $title = __( 'List of Tables', 'pressbooks' );
+            $content = "[LOT]";
+            $content = $this->preProcessPostContent($content);
+            $content = $this->kneadHtml( $content, $type, $i );
+
+            $vars['post_title'] = __( 'List of Tables', 'pressbooks' );
+            $vars['post_content'] = sprintf( $lists_printf,
+                "lot",
+                $slug,
+                pb_get_chapter_number($slug),
+                Sanitize\decode( $title ),
+                $content,
+                '' );
+
+            $file_id = $type.'-' . sprintf( "%03s", $this->get_file_number($slug) );
+            $filename = "{$file_id}-{$slug}.{$this->filext}";
+
+            file_put_contents(
+                $this->tmpDir . "/OEBPS/$filename",
+                $this->loadTemplate( $this->dir . '/templates/xhtml.php', $vars ) );
+
+            $this->manifest[$file_id] = array(
+                'ID' => "lot",
+                'post_title' => __( 'List of Tables', 'pressbooks' ),
+                'filename' => $filename,
+                'post_name' => 'lot',
+            );
+
+            ++$i;
+
+            if($this->listsPosition == 1){
+                $this->frontMatterPos = $i;
+            }
+    }
 
 
 	/**
@@ -1001,12 +1149,12 @@ class Epub201 extends Export {
 			$vars['post_content'] = sprintf( $front_matter_printf,
 				$subclass,
 				$slug,
-				$i,
+                pb_get_chapter_number($slug),
 				Sanitize\decode( $title ),
 				$content,
 				'' );
 
-			$file_id = 'front-matter-' . sprintf( "%03s", $i );
+			$file_id = 'front-matter-' . sprintf( "%03s", $this->get_file_number($slug) );
 			$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 			file_put_contents(
@@ -1017,6 +1165,7 @@ class Epub201 extends Export {
 				'ID' => $front_matter['ID'],
 				'post_title' => $front_matter['post_title'],
 				'filename' => $filename,
+                'post_name' => $slug,
 			);
 
 			++$i;
@@ -1053,6 +1202,7 @@ class Epub201 extends Export {
 				'ID' => -1,
 				'post_title' => $vars['post_title'],
 				'filename' => $filename,
+                'post_name' => 'pressbooks-promo',
 			);
 		}
 	}
@@ -1152,12 +1302,12 @@ class Epub201 extends Export {
 					( $chapter_printf_changed ? $chapter_printf_changed : $chapter_printf ),
 					$subclass,
 					$slug,
-					( $this->numbered ? $n : '' ),
+                    pb_get_chapter_number($slug),
 					Sanitize\decode( $title ),
 					$content,
 					'' );
 
-				$file_id = 'chapter-' . sprintf( "%03s", $j );
+				$file_id = 'chapter-' . sprintf( "%03s", $this->get_file_number($slug) );
 				$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 				file_put_contents(
@@ -1168,6 +1318,7 @@ class Epub201 extends Export {
 					'ID' => $chapter['ID'],
 					'post_title' => $chapter['post_title'],
 					'filename' => $filename,
+                    'post_name' => $slug,
 				);
 
 				$has_chapters = true;
@@ -1238,7 +1389,11 @@ class Epub201 extends Export {
 			'isbn' => @$metadata['pb_ebook_isbn'],
 		);
 
+
 		$i = 1;
+        if($this->listsPosition == 2){
+            $i = 3;
+        }
 		foreach ( $book_contents['back-matter'] as $back_matter ) {
 
 			if ( ! $back_matter['export'] )
@@ -1270,12 +1425,12 @@ class Epub201 extends Export {
 			$vars['post_content'] = sprintf( $back_matter_printf,
 				$subclass,
 				$slug,
-				$i,
+                pb_get_chapter_number($slug),
 				Sanitize\decode( $title ),
 				$content,
 				'' );
 
-			$file_id = 'back-matter-' . sprintf( "%03s", $i );
+			$file_id = 'back-matter-' . sprintf( "%03s", $this->get_file_number($slug) );
 			$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 			file_put_contents(
@@ -1286,6 +1441,7 @@ class Epub201 extends Export {
 				'ID' => $back_matter['ID'],
 				'post_title' => $back_matter['post_title'],
 				'filename' => $filename,
+                'post_name' => $slug,
 			);
 
 			++$i;
@@ -1321,6 +1477,7 @@ class Epub201 extends Export {
 				'ID' => - 1,
 				'post_title' => $vars['post_title'],
 				'filename' => $filename,
+                'post_name' => 'toc'
 			) ) + array_slice( $this->manifest, $array_pos + 1, count( $this->manifest ) - 1, true );
 
 		// HTML
@@ -1337,33 +1494,47 @@ class Epub201 extends Export {
 			$author = '';
 			$title = Sanitize\strip_br( $v['post_title'] );
 			if ( preg_match( '/^front-matter-/', $k ) ) {
-				$class = 'front-matter ';
+                $type = $class = 'front-matter ';
 				$class .= \PressBooks\Taxonomy\front_matter_type( $v['ID'] );
 				$subtitle = trim( get_post_meta( $v['ID'], 'pb_subtitle', true ) );
 				$author = trim( get_post_meta( $v['ID'], 'pb_section_author', true ) );
+                if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+                    continue;
+                }
 			} elseif ( preg_match( '/^part-/', $k ) ) {
-				$class = 'part';
+                $type = $class = 'part';
 				if ( get_post_meta( $v['ID'], 'pb_part_invisible', true ) == 'on' )
 					$class .= ' display-none';
 			} elseif ( preg_match( '/^chapter-/', $k ) ) {
-				$class = 'chapter';
+                $type = $class = 'chapter';
 				$class .= \PressBooks\Taxonomy\chapter_type( $v['ID'] );
 				$subtitle = trim( get_post_meta( $v['ID'], 'pb_subtitle', true ) );
 				$author = trim( get_post_meta( $v['ID'], 'pb_section_author', true ) );
 				if ( $this->numbered && \PressBooks\Taxonomy\chapter_type( $v['ID'] ) !== 'numberless' ) {
-					$title = " $i. " . $title;
+					$title = $title;
 				}
 				if ( \PressBooks\Taxonomy\chapter_type( $v['ID'] ) !== 'numberless' ) ++$i;
+                if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+                    continue;
+                }
 			} elseif ( preg_match( '/^back-matter-/', $k ) ) {
-				$class = 'back-matter ';
+                $type = $class = 'back-matter ';
 				$class .= \PressBooks\Taxonomy\back_matter_type( $v['ID'] );
 				$subtitle = trim( get_post_meta( $v['ID'], 'pb_subtitle', true ) );
 				$author = trim( get_post_meta( $v['ID'], 'pb_section_author', true ) );
+                if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
+                    continue;
+                }
 			} else {
 				continue;
 			}
+            $cnumber = pb_get_chapter_number($v['post_name']);
+            if($class == "part" || $cnumber === 0){
+                $html .= sprintf( '<li class="%s"><a href="%s"><span class="toc-chapter-title">%s</span>', $class, $v['filename'], Sanitize\decode( $title ) );
+            }else{
+                $html .= sprintf( '<li class="%s"><a href="%s"><span class="toc-chapter-title"><span class="toc-%s-number">%s - </span>%s</span>', $class, $v['filename'], $type, $cnumber, Sanitize\decode( $title ) );
+            }
 
-			$html .= sprintf( '<li class="%s"><a href="%s"><span class="toc-chapter-title">%s</span>', $class, $v['filename'], Sanitize\decode( $title ) );
 
 			if ( $subtitle )
 				$html .= ' <span class="chapter-subtitle">' . Sanitize\decode( $subtitle ) . '</span>';
@@ -1374,16 +1545,9 @@ class Epub201 extends Export {
 			$html .= "</a>";
 			
 			if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
-				$sections = \PressBooks\Book::getChapterSubsections( $v['ID'] );
-				if ( $sections ) {
-					$s = 1;
-					$html .= '<ul class="sections">';
-					foreach ( $sections as $section ) {
-						$html .= '<li class="section"><a href="' . $v['filename'] . '#section-' . $s . '"><span class="toc-subsection-title">' . $section . '</span></a></li>';
-						 ++$s;
-					}
-					$html .= '</ul>';
-				}
+                // Display headlines
+                $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
+                $html .= \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, $v['filename']);
 			}
 			
 			$html .= "</li>\n";
@@ -1773,11 +1937,7 @@ class Epub201 extends Export {
 		// Seems legit...
 
 		$new_type = $lookup[$last_part];
-		$new_pos = 0;
-		foreach ( $lookup as $p => $t ) {
-			if ( $t == $new_type ) ++$new_pos;
-			if ( $p == $last_part ) break;
-		}
+		$new_pos = $this->get_file_number($last_part);
 		$new_url = "$new_type-" . sprintf( "%03s", $new_pos ) . "-$last_part.{$this->filext}";
 
 		if ( $anchor )
@@ -1876,5 +2036,264 @@ class Epub201 extends Export {
 
 	}
 
+    /**
+     *  Changes the LOT and LOI shortcodes to Epub specifics
+     */
+    protected function setListShortcodes(){
+        add_shortcode( 'LOT', array( $this, 'handle_LOT_shortcode' ));
+        add_shortcode( 'LOI', array( $this, 'handle_LOI_shortcode' ));
+    }
+
+    /**
+     *  Resets the LOT and LOI shortcodes to normal ones
+     */
+    protected function resetListShortcodes(){
+        add_shortcode( 'LOT', '\PressBooks\Lists\Lists::handle_LOT_shortcode' );
+        add_shortcode( 'LOI', '\PressBooks\Lists\Lists::handle_LOI_shortcode' );
+    }
+
+    /**
+     * Handles the list of table (LOT) shortcode Epub specific
+     * @param $atts
+     * @return string
+     */
+    function handle_LOT_shortcode($atts){
+        $bl = \PressBooks\Lists\Lists::get_book_lists();
+        return '<nav epub:type="lot">'.\PressBooks\Lists\ListShow::hierarchical_list($bl["table"], "ol").'</nav>';
+    }
+
+    /**
+     * Handles the list of figure (LOF) shortcode Epub specific
+     * @param $atts
+     * @return string
+     */
+    function handle_LOI_shortcode($atts){
+        $bl = \PressBooks\Lists\Lists::get_book_lists();
+        return '<nav epub:type="loi">'.\PressBooks\Lists\ListShow::hierarchical_list($bl["img"], "ol").'</nav>';
+    }
+
+
+    /**
+     * A Hook handler for the chapter number, do to the rearrangements in the front matters
+     * @param $i the original number
+     * @param $post_name the post name
+     * @return int
+     */
+    function get_chapter_number($i, $post_name){
+
+        $lookup = \PressBooks\Book::getBookStructure();
+        $section = @$lookup['__export_lookup'][$post_name];
+
+        // Special for loi and lot
+        if($post_name == "loi"){
+            if($this->listsPosition == 2){
+                return 1;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+        if($post_name == "lot"){
+            if($this->listsPosition == 2){
+                return 2;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+
+        // Handle the different types
+        if($section == 'chapter'){
+            return $i;
+        }else if($section == 'back-matter'){
+            //If lists are in the back matter add to the number
+            if($this->listsPosition == 2){
+                return $i+2;
+            }else{
+                return $i;
+            }
+        }else if($section == 'front-matter'){
+            //Handle the numbers if the lists ar in the front matter
+            //The rearrangement does not need to be addressed, it is handled in the getBookStructure hook
+            if($this->listsPosition == 1){
+                $i = 0;
+                foreach ( $lookup['front-matter'] as $chapter ) {
+                    $p = get_posts( array( 'name' => $chapter['post_name'], 'post_type' => $section, 'post_status' => 'publish', 'numberposts' => 1 ) );
+                    $type = pb_get_section_type( $p[0] );
+                    if ( $type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on')  $i++;
+                    $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+                    if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass ){
+                        if($chapter['post_name'] == $post_name){
+                            return ($type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on') ? $i : 0;
+                        }
+                    }else{
+                        if($chapter['post_name'] == $post_name){
+                            return ($type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on') ? $i+2 : 0;
+                        }
+                        if($post_name == "loi"){
+                            return $i;
+                        }else if($post_name == "lot"){
+                            return $i+1;
+                        }
+                    }
+                }
+            }else{
+                return $i;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Returns the section type of a post hook - for loi and lot
+     * @param $section the default section
+     * @param $post_name the post name
+     * @return string
+     */
+    function get_chapter_number_section($section, $post_name){
+        if($post_name == "loi" || $post_name == "lot"){
+            if($this->listsPosition == 1){
+                return "front-matter";
+            }else if($this->listsPosition == 2){
+                return "back-matter";
+            }
+        }
+        return $section;
+    }
+
+    /**
+     * Returns the file number for a post. Different from the chapter number because of numberless chapters
+     * @param $post_name The post name
+     * @return int
+     */
+    protected function get_file_number($post_name){
+
+        $lookup = \PressBooks\Book::getBookStructure();
+        $section = @$lookup['__export_lookup'][$post_name];
+
+        $i = 0;
+        if ( 'chapter' == $section  || 'front-matter' == $section || 'back-matter' == $section){
+            foreach ( $lookup['__export_lookup'] as $key => $val ) {
+                if ( $section == $val ) {
+                    ++$i;
+                    if ( $key == $post_name ) break;
+                }
+            }
+        }
+
+        if($post_name == "loi"){
+            if($this->listsPosition == 2){
+                return 1;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+        if($post_name == "lot"){
+            if($this->listsPosition == 2){
+                return 2;
+            }else if($this->listsPosition == 1){
+                $section = "front-matter";
+            }
+        }
+
+        if($section == 'chapter'){
+            return $i;
+        }else if($section == 'back-matter'){
+            if($this->listsPosition == 2){
+                return $i+2;
+            }else{
+                return $i;
+            }
+        }else if($section == 'front-matter'){
+            if($this->listsPosition == 1){
+                $i = 0;
+                foreach ( $lookup['front-matter'] as $chapter ) {
+                    $i++;
+                    $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+                    if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass ){
+                        if ( $chapter['post_name'] == $post_name) return $i;
+                    }else{
+                        if ( $chapter['post_name'] == $post_name) return $i+2;
+                        if($post_name == "loi"){
+                            return $i;
+                        }else if($post_name == "lot"){
+                            return $i+1;
+                        }
+                    }
+                }
+            }else{
+                return $i;
+            }
+        }
+        return 0;
+
+    }
+
+    /**
+     * Rearanges the book structure for the getBookStructure Hook. Needed because of the rearrangements in the front matter
+     * @param $book_structure the original book structure
+     * @return mixed
+     */
+    function getBookStructure($book_structure){
+
+        $fm = $book_structure["front-matter"];
+        $fmn = array();
+
+        foreach ( $fm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+            if ( 'before-title' != $subclass )
+                continue; //Skip
+            $fmn[] = $chapter;
+        }
+
+        foreach ( array( 'dedication', 'epigraph' ) as $compare ) {
+            foreach ( $fm as $chapter ) {
+                if ( ! $chapter['export'] )
+                    continue; // Skip
+                $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+                if ( $compare != $subclass )
+                    continue; //Skip
+                $fmn[] = $chapter;
+            }
+        }
+
+        foreach ( $fm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
+            if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass )
+                continue; // Skip
+            $fmn[] = $chapter;
+        }
+
+        $book_structure["front-matter"] = $fmn;
+
+
+        $c = $book_structure["chapter"];
+        $cn = array();
+
+        foreach ( $c as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $cn[] = $chapter;
+        }
+
+        $book_structure["chapter"] = $cn;
+
+
+
+        $bm = $book_structure["back-matter"];
+        $bmn = array();
+
+        foreach ( $bm as $chapter ) {
+            if ( ! $chapter['export'] )
+                continue; // Skip
+            $bmn[] = $chapter;
+        }
+
+        $book_structure["back-matter"] = $bmn;
+
+        return $book_structure;
+    }
 
 }

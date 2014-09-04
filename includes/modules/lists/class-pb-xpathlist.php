@@ -44,15 +44,14 @@ class XpathList implements iList {
      * Add a the content of a post to the list
      * @param string $content the content of the post
      * @param int $pid the id of the post
+     * @param string $type the type of the content
      */
-    function addContentToList($content, $pid)
+    function addContentToList($content, $pid, $type)
     {
-        $post = get_post($pid);
-        $cn = pb_get_chapter_number($post->post_name);
-        $c = new \PressBooks\Lists\ListChapter($this, $cn);
+        $c = new \PressBooks\Lists\ListChapter($this, $pid, $type);
         $this->chapters[] = $c;
 
-        if(trim($content) != ""){
+        if(trim($content) != "" && $type != "part"){
             $html = new \DOMDocument();
             $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
             $html->loadHTML($content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
@@ -193,6 +192,20 @@ class XpathList implements iList {
     }
 
     /**
+     * Returns an array of nodes and Chapters.
+     * All nodes are children of the array
+     * Active and Inactive ones
+     * @return array
+     */
+    function getFlatArrayWithChapter(){
+        $out = array();
+        foreach($this->chapters as $list){
+            $out = array_merge($out, $list->getFlatArrayWithChapter());
+        }
+        return($out);
+    }
+
+    /**
      * Returns an array representing the hierarchy of the nodes
      * Chapters are represented too
      * Only active nodes
@@ -205,6 +218,24 @@ class XpathList implements iList {
             $out[] = $list->getHierarchicalArray();
         }
         return($out);
+    }
+
+    /**
+     * Returns a ongoing numbers representing the position of the child
+     * @param \PressBooks\Lists\ListNode $child
+     * @return int
+     */
+    function getOnGoingNumberOfChild($child){
+        $i = 0;
+        foreach($this->chapters as $chapter){
+            $n = $chapter->getOnGoingNumberOfChild($child);
+            if($n > 0){
+                return($i+$n);
+            }else{
+                $i -= $n;
+            }
+        }
+        return(0);
     }
 
     /**
@@ -251,19 +282,19 @@ class XpathList implements iList {
      */
     function addCaptionPrefix($content){
         if(trim($content) != ""){
+
             $up = new \PressBooks\Lists\DOMElementUpdater();
             $xpath = $up->getDOMXpath($content);
             $ss = $this->getSearchXpath();
-
             foreach( $xpath->query($ss) as $node ) {
                 $id = $node->getAttribute("id");
-                $nclass = $node->getAttribute("class");
-                $nclassa = explode(" ", $nclass);
 
-                if(in_array("in-list",$nclassa) && $id){
+                if($id){
                     $ndata = $this->getNodeById($id);
-                    $prefix = ListNodeShow::get_caption_prefix($ndata);
-                    $this->addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);
+                    if($ndata->active){
+                        $prefix = ListNodeShow::get_caption_prefix($ndata);
+                        $this->addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);
+                    }
                 }
             }
 
@@ -271,6 +302,20 @@ class XpathList implements iList {
             $content = $up->getContent();
         }
         return $content;
+    }
+
+    /**
+     * Get the ListChapter by the PID
+     * @param int $pid the PID
+     * @return \PressBooks\Lists\ListChapter|false
+     */
+    function getChapterByPid($pid){
+        foreach($this->chapters as $c){
+            if($pid == $c->pid){
+                return($c);
+            }
+        }
+        return false;
     }
 
     /**
