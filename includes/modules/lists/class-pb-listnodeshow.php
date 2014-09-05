@@ -177,14 +177,14 @@ class ListNodeShow {
     static function get_acronym($node){
         $node = static::get_the_array($node);
         $prefix = array();
-        $prefix["table"] = "Tab.";
-        $prefix["img"] = "Abb.";
-        $prefix["h1"] = "Title";
-        $prefix["h2"] = "Title";
-        $prefix["h3"] = "Title";
-        $prefix["h4"] = "Title";
-        $prefix["h5"] = "Title";
-        $prefix["h6"] = "Title";
+        $prefix["table"] = __( 'Tab.', 'pressbooks' );
+        $prefix["img"] = __( 'Fig.', 'pressbooks' );
+        $prefix["h1"] = __( 'Chapter', 'pressbooks' );
+        $prefix["h2"] = __( 'Chapter', 'pressbooks' );
+        $prefix["h3"] = __( 'Chapter', 'pressbooks' );
+        $prefix["h4"] = __( 'Chapter', 'pressbooks' );
+        $prefix["h5"] = __( 'Chapter', 'pressbooks' );
+        $prefix["h6"] = __( 'Chapter', 'pressbooks' );
         $output = $prefix[$node["type"]];
         /**
          * Filter the default lists acronym string output.
