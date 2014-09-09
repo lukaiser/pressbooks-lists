@@ -89,10 +89,12 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
                 else node.appendChild(caption);
             }
             var ctext = window.prompt("Caption", caption.textContent);
-            if(ctext == ""){
-                node.removeChild(caption);
-            }else{
-                caption.textContent = ctext;
+            if(ctext != null){
+                if(ctext == ""){
+                    node.removeChild(caption);
+                }else{
+                    caption.textContent = ctext;
+                }
             }
         }
     }
@@ -116,10 +118,10 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
         dom.setAttrib( node, 'data-wp-listselect', 1 );
         rectangle = dom.getRect( node );
 
-        inList = isToggled(node) ? "active" : "";
+        inList = isToggled(node) ? "pblists-icon-in-list" : "pblists-icon-not-in-list";
 
-        toolbarHtml = '<div class="dashicons dashicons-admin-post list '+inList+'" data-mce-bogus="1"></div>' +
-            '<div class="dashicons dashicons-format-quote ref" data-mce-bogus="1"></div>';
+        toolbarHtml = '<div class="dashicons list '+inList+'" data-mce-bogus="1"></div>' +
+            '<div class="dashicons dashicons-editor-code ref" data-mce-bogus="1"></div>';
 
         if(node.nodeName == "TABLE"){
             toolbarHtml += '<div class="dashicons dashicons-edit caption" data-mce-bogus="1"></div>';
