@@ -74,7 +74,7 @@ class Lists {
     static function _ajax_fetch_lists_list_callback(){
         error_reporting(E_ERROR | E_PARSE);
         $GLOBALS["hook_suffix"] = $_REQUEST["hook_suffix"];
-        if(! empty( $_REQUEST['list_type'] ) && in_array($_REQUEST['list_type'], array("img", "h", "table"))){ //TODO lists
+        if(! empty( $_REQUEST['list_type'] ) && array_key_exists($_REQUEST['list_type'], Lists::get_book_lists())){
             $chapters = $_REQUEST['list_type'] == "h";
             $list_table = new \PressBooks\Lists\Lists_List_Table($_REQUEST['list_type'], $chapters);
             $list_table->ajax_response();

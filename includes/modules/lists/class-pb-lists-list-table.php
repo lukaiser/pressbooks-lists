@@ -401,11 +401,14 @@ class Lists_List_Table extends \WP_List_Table {
 
 		//parent::ajax_response();
         check_ajax_referer( 'ajax-lists-list-nonce', '_ajax_lists_list_nonce' );
+        if(!current_user_can("edit_posts")){
+            die( json_encode( "No rights!" ) );
+        }
+
         if($_REQUEST["change_id"]){
             list($type, $id) = explode('-', $_REQUEST["change_id"], 2);
         }
 
-        //TODO rights and check requestvars
         if($_REQUEST["change_action"] == "type" && $_REQUEST["change_value"] && $_REQUEST["change_id"]){
             \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->changeNodeType($id, $_REQUEST["change_value"]);
         }else if($_REQUEST["change_action"] == "active" && $_REQUEST["change_value"] && $_REQUEST["change_id"]){
@@ -459,7 +462,9 @@ class Lists_List_Table extends \WP_List_Table {
 
     function process_bulk_action() {
 
-        //TODO rights
+        if(!current_user_can("edit_posts")){
+            return;
+        }
         //Detect when a bulk action is being triggered...
         if( 'add'===$this->current_action() ) {
             foreach($_REQUEST[$this->_args['singular']] as $item) {

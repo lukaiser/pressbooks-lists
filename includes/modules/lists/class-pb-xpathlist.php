@@ -87,7 +87,7 @@ class XpathList implements iList {
                 $nclassa = explode(" ", $nclass);
                 if(!in_array("in-list",$nclassa) && !in_array("not-in-list",$nclassa)){
                     $changed = true;
-                    $nclassa[] = "in-list"; //TODO default
+                    $nclassa[] = "in-list";
                     $node->setAttribute("class", implode(" ", array_filter($nclassa)));
                 }
             }
