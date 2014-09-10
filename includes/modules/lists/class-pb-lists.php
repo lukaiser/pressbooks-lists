@@ -118,7 +118,12 @@ class Lists {
         if(!$id){
             return "";
         }
-        return ListNodeShow::get_rev_string(static::get_list_node_by_id($id));
+        $node = static::get_list_node_by_id($id);
+        if($node){
+            return ListNodeShow::get_rev_string($node);
+        }else{
+            return "";
+        }
     }
 
     /**
@@ -182,7 +187,7 @@ class Lists {
 
             foreach ( $struct as $i => $val ) {
 
-                if ( isset( $val['post_content'] ) ) {
+                if ( isset( $val['post_content'] ) && $val["post_status"] == 'publish' ) {
                     static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $val['post_type'], $idsAndClasses);
                 }
 
@@ -191,7 +196,7 @@ class Lists {
                     // Do chapters, which are embedded in part structure
                     foreach ( $book_contents[$type][$i]['chapters'] as $j => $val2 ) {
 
-                        if ( isset( $val2['post_content'] ) ) {
+                        if ( isset( $val2['post_content'] ) && $val2["post_status"] == 'publish' ) {
                             static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $val2['post_type'], $idsAndClasses);
                         }
 

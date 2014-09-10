@@ -52,6 +52,9 @@ class XpathList implements iList {
         $this->chapters[] = $c;
 
         if(trim($content) != "" && $type != "part"){
+
+            libxml_use_internal_errors( true );
+
             $html = new \DOMDocument();
             $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
             $html->loadHTML($content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
@@ -61,6 +64,9 @@ class XpathList implements iList {
                 $newn = $this->createListNodeWithNode($node, $xpath, $pid);
                 $c->addChild($newn);
             }
+
+            $errors = libxml_get_errors(); // TODO: Handle errors gracefully
+            libxml_clear_errors();
         }
     }
 

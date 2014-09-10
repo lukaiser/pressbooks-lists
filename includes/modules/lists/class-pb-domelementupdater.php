@@ -39,9 +39,12 @@ class DOMElementUpdater {
      * @return \DOMXpath
      */
     function getDOMXpath($content){
+        libxml_use_internal_errors( true );
         $this->html = new \DOMDocument();
         $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
         $this->html->loadHTML("<div>".$content."</div>", LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $errors = libxml_get_errors(); // TODO: Handle errors gracefully
+        libxml_clear_errors();
         return new \DOMXpath($this->html);
     }
 

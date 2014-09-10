@@ -266,7 +266,7 @@ class Lists_List_Table extends \WP_List_Table {
             'type' => __( 'Type', 'pressbooks' ),
 			//'id' => __( 'ID', 'pressbooks' ),
 			'active' => __( 'In List', 'pressbooks' ),
-            'reverence' => __( 'Reverence', 'pressbooks' ),
+            'reverence' => __( 'Reference', 'pressbooks' ),
 		);
 
 		return $columns;

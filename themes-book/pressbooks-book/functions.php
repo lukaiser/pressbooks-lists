@@ -387,8 +387,8 @@ function pressbooks_theme_options_global_init() {
         $_section,
         array(
             __( 'Do not display', 'pressbooks' ),
-            __( 'In Front-Matters', 'pressbooks' ),
-            __( 'In Back-Matters', 'pressbooks' ),
+            __( 'In front-matter', 'pressbooks' ),
+            __( 'In back-matter', 'pressbooks' ),
         )
     );
 
