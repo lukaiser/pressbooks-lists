@@ -217,7 +217,7 @@ function pb_get_chapter_number( $post_name ) {
 
     $lookup = \PressBooks\Book::getBookStructure();
     $lookup = $lookup['__lookup'];
-    $section = @$lookup[$post_name];
+    $section = @$lookup[$post_name]['type'];
 
     /**
      * Filter the chapter number section
@@ -228,11 +228,12 @@ function pb_get_chapter_number( $post_name ) {
     $section = apply_filters( 'pb_get_chapter_number_section', $section, $post_name );
 
     $i = 0;
-    if ( 'chapter' == @$lookup[$post_name]  || 'front-matter' == @$lookup[$post_name] || 'back-matter' == @$lookup[$post_name]){
+    if ( 'chapter' == @$lookup[$post_name]['type']  || 'front-matter' == @$lookup[$post_name]['type'] || 'back-matter' == @$lookup[$post_name]['type']){
         foreach ( $lookup as $key => $val ) {
-            if ( $section == $val ) {
-                $chapter = get_posts( array( 'post_name' => $key, 'post_type' => $section, 'post_status' => array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'), 'numberposts' => 1 ) );
-                if(count($chapter) == 0){
+            if ( $section == $val['type'] ) {
+                $id = $val["ID"];
+                $chapter = get_post($id);
+                if(!$chapter){
                     if( $key == $post_name ){
                         $i = 0;
                         break;
@@ -240,10 +241,10 @@ function pb_get_chapter_number( $post_name ) {
                         continue;
                     }
                 }
-                $type = pb_get_section_type( $chapter[0] );
-                if ( $type !== 'numberless' && get_post_meta( $chapter[0]->ID, 'invisible-in-toc', true ) !== 'on') ++$i;
+                $type = pb_get_section_type( $chapter );
+                if ( $type !== 'numberless' && get_post_meta( $id, 'invisible-in-toc', true ) !== 'on') ++$i;
                 if ( $key == $post_name ){
-                    if ( $type == 'numberless' || get_post_meta( $chapter[0]->ID, 'invisible-in-toc', true ) == 'on') $i = 0;
+                    if ( $type == 'numberless' || get_post_meta( $id, 'invisible-in-toc', true ) == 'on') $i = 0;
                     break;
                 }
             }

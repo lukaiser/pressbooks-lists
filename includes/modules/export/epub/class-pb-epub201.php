@@ -2120,11 +2120,11 @@ class Epub201 extends Export {
             if($this->listsPosition == 1){
                 $i = 0;
                 foreach ( $lookup['front-matter'] as $chapter ) {
-                    $p = get_posts( array( 'post_name' => $chapter['post_name'], 'post_type' => $section, 'post_status' => array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'), 'numberposts' => 1 ) );
-                    if(count($p) == 0){
+                    $p = get_post($chapter['ID']);
+                    if(!$p){
                         return 0;
                     }
-                    $type = pb_get_section_type( $p[0] );
+                    $type = pb_get_section_type( $p );
                     if ( $type !== 'numberless' && get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) !== 'on')  $i++;
                     $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );
                     if ( 'dedication' == $subclass || 'epigraph' == $subclass || 'title-page' == $subclass || 'before-title' == $subclass ){
