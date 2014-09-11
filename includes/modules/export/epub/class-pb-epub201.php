@@ -1896,52 +1896,58 @@ class Epub201 extends Export {
 		if ( ! $pos )
 			return false;
 
-		$url = trim( $url );
-		$url = rtrim( $url, '/' );
+        $purl = parse_url( $url );
+        if(array_key_exists("host", $purl)){
+            $domain2 = parse_url( wp_guess_url() );
+            if ( $purl['host'] != @$domain2['host'] ) return false;
+            if(!array_key_exists('path', $purl) && array_key_exists('path', $domain2)) return false;
+            if(array_key_exists('path', $purl) && array_key_exists('path', $domain2) && 0 !== strpos($purl['path'], $domain2['path'])) return false;
+        }
+        if(array_key_exists('query', $purl)){
+            parse_str($purl['query'], $params);
+            if(array_key_exists("p", $params)){
+                $post = get_post($params["p"]);
+                if($post){
+                    $slug = $post->post_name;
+                }else{
+                    return false;
+                }
+            }
+        }
+        if(!isset($slug)){
+            if(array_key_exists('path', $purl)){
+                $path = explode( '/', $purl['path'] );
+                if(count($path) > 0){
+                    $slug = array_pop($path);
+                    if(trim($slug) == ''){
+                        if(count($path) > 0){
+                            $slug = array_pop($path);
+                        }else{
+                            return false;
+                        }
+                    }
+                }else{
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }
 
-		$last_part = explode( '/', $url );
-		$last_pos = count( $last_part ) - 1;
-		$anchor = '';
+        $lookup = \PressBooks\Book::getBookStructure();
+        $lookup = $lookup['__export_lookup'];
 
-		// Look for #anchors
-		if ( $last_pos > 0 && '#' == substr( trim( $last_part[$last_pos] ), 0, 1 ) ) {
-			$anchor = trim( $last_part[$last_pos] );
-			$last_part = trim( $last_part[$last_pos - 1] );
-		} elseif ( false !== strpos( $last_part[$last_pos], '#' ) ) {
-			list( $last_part, $anchor ) = explode( '#', $last_part[$last_pos] );
-			$anchor = trim( "#{$anchor}" );
-			$last_part = trim( $last_part );
-		} else {
-			$last_part = trim( $last_part[$last_pos] );
-		}
-
-		if ( ! $last_part )
-			return false;
-
-		$lookup = \PressBooks\Book::getBookStructure();
-		$lookup = $lookup['__export_lookup'];
-
-		if ( ! isset( $lookup[$last_part] ) )
-			return false;
-
-		$domain = parse_url( $url );
-		$domain = @$domain['host'];
-
-		if ( $domain ) {
-			$domain2 = parse_url( wp_guess_url() );
-			if ( $domain != @$domain2['host'] ) {
-				return false;
-			}
-		}
+        if ( ! array_key_exists($slug, $lookup ) )
+            return false;
 
 		// Seems legit...
 
-		$new_type = $lookup[$last_part];
-		$new_pos = $this->get_file_number($last_part);
-		$new_url = "$new_type-" . sprintf( "%03s", $new_pos ) . "-$last_part.{$this->filext}";
+		$new_type = $lookup[$slug];
+		$new_pos = $this->get_file_number($slug);
+		$new_url = "$new_type-" . sprintf( "%03s", $new_pos ) . "-$slug.{$this->filext}";
 
-		if ( $anchor )
-			$new_url .= $anchor;
+		if ( array_key_exists('fragment', $purl) )
+			$new_url .= "#".$purl['fragment'];
 
 		return $new_url;
 	}
