@@ -422,6 +422,7 @@ class Xhtml11 extends Export {
 
 		$content = apply_filters( 'the_content', $content );
 		$content = $this->fixAnnoyingCharacters( $content );
+        $content = $this->kneadHtml($content);
 		$content = $this->tidy( $content );
 
 		return $content;
@@ -1143,6 +1144,139 @@ class Xhtml11 extends Export {
             $this->listsPosition = @$hacks['lists_position'];
         }
 
+    }
+
+    /**
+     * Pummel the HTML
+     *
+     * @param string $html
+     * @param string $type front-matter, part, chapter, back-matter, ...
+     * @param int $pos (optional) position of content, used when creating filenames like: chapter-001, chapter-002, ...
+     *
+     * @return string
+     */
+    protected function kneadHtml( $html ) {
+        if(trim($html) == ''){
+            return($html);
+        }
+
+        libxml_use_internal_errors( true );
+
+        // Load HTMl snippet into DOMDocument using UTF-8 hack
+        $utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
+        $doc = new \DOMDocument();
+        $doc->loadHTML( $utf8_hack . $html );
+
+        // Deal with <a href="">, <a href=''>, and other mutations
+        $doc = $this->kneadHref( $doc );
+
+        // If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
+        // Ie. It will spit out the characters converted in encoded format. Instead do the following:
+        $html = $doc->saveXML( $doc->documentElement );
+
+        // Remove auto-created <html> <body> and <!DOCTYPE> tags.
+        $html = preg_replace( '/^<!DOCTYPE.+?>/', '', str_replace( array( '<html>', '</html>', '<body>', '</body>' ), array( '', '', '', '' ), $html ) );
+
+        $errors = libxml_get_errors(); // TODO: Handle errors gracefully
+        libxml_clear_errors();
+
+        return $html;
+    }
+
+    /**
+     * Change hrefs
+     *
+     * @param \DOMDocument $doc
+     * @return \DOMDocument
+     */
+    protected function kneadHref( \DOMDocument $doc ) {
+
+        $urls = $doc->getElementsByTagName( 'a' );
+        foreach ( $urls as $url ) {
+
+            $current_url = '' . $url->getAttribute( 'href' ); // Stringify
+
+            // Don't touch empty urls
+            if ( ! trim( $current_url ) )
+                continue;
+
+            // Determine if we are trying to link to our own internal content
+            $internal_url = $this->fuzzyHrefMatch( $current_url );
+            if ( false !== $internal_url ) {
+                $url->setAttribute( 'href', $internal_url );
+                continue;
+            }
+
+            // Canonicalize, fix typos, remove garbage
+            if ( '#' != @$current_url[0] ) {
+                $url->setAttribute( 'href', \PressBooks\Sanitize\canonicalize_url( $current_url ) );
+            }
+
+        }
+
+        return $doc;
+    }
+
+    /**
+     * Try to determine if a URL is pointing to internal content.
+     *
+     * @param $url
+     * @return bool|string
+     */
+    protected function fuzzyHrefMatch( $url ) {
+
+        $purl = parse_url( $url );
+        if(array_key_exists("host", $purl)){
+            $domain2 = parse_url( wp_guess_url() );
+            if ( $purl['host'] != @$domain2['host'] ) return false;
+            if(!array_key_exists('path', $purl) && array_key_exists('path', $domain2)) return false;
+            if(array_key_exists('path', $purl) && array_key_exists('path', $domain2) && 0 !== strpos($purl['path'], $domain2['path'])) return false;
+        }
+        if(array_key_exists('query', $purl)){
+            parse_str($purl['query'], $params);
+            if(array_key_exists("p", $params)){
+                $post = get_post($params["p"]);
+                if($post){
+                    $slug = $post->post_name;
+                }else{
+                    return false;
+                }
+            }
+        }
+        if(!isset($slug)){
+            if(array_key_exists('path', $purl)){
+                $path = explode( '/', $purl['path'] );
+                if(count($path) > 0){
+                    $slug = array_pop($path);
+                    if(trim($slug) == ''){
+                        if(count($path) > 0){
+                            $slug = array_pop($path);
+                        }else{
+                            return false;
+                        }
+                    }
+                }else{
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }
+
+        $lookup = \PressBooks\Book::getBookStructure();
+        $lookup = $lookup['__export_lookup'];
+
+        if ( ! array_key_exists($slug, $lookup ) )
+            return false;
+
+
+
+        if ( array_key_exists('fragment', $purl)){
+            return "#".$purl['fragment'];
+        }
+        $new_url = "#".$slug;
+
+        return $new_url;
     }
 
     /**
