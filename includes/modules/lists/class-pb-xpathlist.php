@@ -297,7 +297,7 @@ class XpathList implements iList {
 
                 if($id){
                     $ndata = $this->getNodeById($id);
-                    if($ndata->active){
+                    if($ndata && $ndata->active){
                         $prefix = ListNodeShow::get_caption_prefix($ndata);
                         $this->addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);
                     }
