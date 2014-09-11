@@ -228,6 +228,7 @@ class Book {
 		// -----------------------------------------------------------------------------
 
 		$book_structure['__order'] = array();
+        $book_structure['__lookup'] = array();
 		$book_structure['__export_lookup'] = array();
 
 		foreach ( $custom_types as $type ) {
@@ -235,7 +236,8 @@ class Book {
 				unset( $book_structure[$type][$i]['post_parent'] );
 				if ( $type != 'part' ) {
 					$book_structure['__order'][$struct['ID']] = array( 'export' => $struct['export'], 'post_status' => $struct['post_status'] );
-					if ( $struct['export'] ) {
+                    $book_structure['__lookup'][$struct['post_name']] = $type;
+                    if ( $struct['export'] ) {
 						$book_structure['__export_lookup'][$struct['post_name']] = $type;
 					}
 				} else {
@@ -244,7 +246,8 @@ class Book {
 						if ( get_post_meta( $struct['ID'], 'pb_part_content', true ) && get_post_meta( $struct['ID'], 'pb_part_invisible', true ) !== 'on' )
 							$book_structure['__order'][$struct['ID']] = array( 'export' => $struct['export'], 'post_status' => $struct['post_status'] );
 						$book_structure['__order'][$chapter['ID']] = array( 'export' => $chapter['export'], 'post_status' => $chapter['post_status'] );
-						if ( $chapter['export'] ) {
+                        $book_structure['__lookup'][$chapter['post_name']] = 'chapter';
+                        if ( $chapter['export'] ) {
 							$book_structure['__export_lookup'][$chapter['post_name']] = 'chapter';
 						}
 					}

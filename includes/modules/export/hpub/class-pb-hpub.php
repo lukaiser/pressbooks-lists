@@ -1685,6 +1685,10 @@ class Hpub extends Export {
             }
         }
 
+        if($i == 0){
+            return $i;
+        }
+
         // Handle the different types
         if($section == 'chapter'){
             return $i;
@@ -1700,7 +1704,10 @@ class Hpub extends Export {
             if($this->listsPosition == 1){
                 $i = 0;
                 foreach ( $lookup['front-matter'] as $chapter ) {
-                    $p = get_posts( array( 'name' => $chapter['post_name'], 'post_type' => $section, 'post_status' => 'publish', 'numberposts' => 1 ) );
+                    $p = get_posts( array( 'post_name' => $chapter['post_name'], 'post_type' => $section, 'post_status' => array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'), 'numberposts' => 1 ) );
+                    if(count($p) == 0){
+                        return 0;
+                    }
                     $type = pb_get_section_type( $p[0] );
                     if ( $type !== 'numberless' )  $i++;
                     $subclass = \PressBooks\Taxonomy\front_matter_type( $chapter['ID'] );

@@ -38,6 +38,7 @@ class Lists {
         add_shortcode( 'rev', '\PressBooks\Lists\Lists::handle_rev_shortcode' );
         add_shortcode( 'LOT', '\PressBooks\Lists\Lists::handle_LOT_shortcode' );
         add_shortcode( 'LOI', '\PressBooks\Lists\Lists::handle_LOI_shortcode' );
+        add_filter( 'pb_getBookStructure', '\PressBooks\Lists\Lists::getBookStructure');
     }
 
     /**********************
@@ -146,6 +147,43 @@ class Lists {
         return ListShow::hierarchical_list($bl["img"]);
     }
 
+    /**
+     * Handles the book structure hook. Removes not published chapters in the web view
+     * @param $book_structure the original book structure
+     * @return mixed
+     */
+    static function getBookStructure($book_structure){
+        if(!is_admin() && ! array_key_exists( 'format', $GLOBALS['wp_query']->query_vars )){
+            $fm = $book_structure["front-matter"];
+            $fmn = array();
+            foreach ( $fm as $chapter ) {
+                if ( $chapter['post_status'] != "publish" )
+                    continue; // Skip
+                $fmn[] = $chapter;
+            }
+            $book_structure["front-matter"] = $fmn;
+
+            $c = $book_structure["chapter"];
+            $cn = array();
+            foreach ( $c as $chapter ) {
+                if ( $chapter['post_status'] != "publish" )
+                    continue; // Skip
+                $cn[] = $chapter;
+            }
+            $book_structure["chapter"] = $cn;
+
+            $bm = $book_structure["back-matter"];
+            $bmn = array();
+            foreach ( $bm as $chapter ) {
+                if ( $chapter['post_status'] != "publish" )
+                    continue; // Skip
+                $bmn[] = $chapter;
+            }
+            $book_structure["back-matter"] = $bmn;
+        }
+        return($book_structure);
+    }
+
     /**********************
      * Functions
      **********************/
@@ -187,7 +225,7 @@ class Lists {
 
             foreach ( $struct as $i => $val ) {
 
-                if ( isset( $val['post_content'] ) && $val["post_status"] == 'publish' ) {
+                if ( isset( $val['post_content'] ) ) {
                     static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $val['post_type'], $idsAndClasses);
                 }
 
@@ -196,7 +234,7 @@ class Lists {
                     // Do chapters, which are embedded in part structure
                     foreach ( $book_contents[$type][$i]['chapters'] as $j => $val2 ) {
 
-                        if ( isset( $val2['post_content'] ) && $val2["post_status"] == 'publish' ) {
+                        if ( isset( $val2['post_content'] ) ) {
                             static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $val2['post_type'], $idsAndClasses);
                         }
 
