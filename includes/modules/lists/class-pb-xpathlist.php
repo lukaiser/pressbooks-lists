@@ -57,7 +57,7 @@ class XpathList implements iList {
 
             $html = new \DOMDocument();
             $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
-            $html->loadHTML($content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+            $html->loadHTML("<div>".$content."</div>", LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
             $xpath = new \DOMXpath($html);
             $ss = $this->getSearchXpath();
             foreach( $xpath->query($ss) as $node ) {
