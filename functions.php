@@ -271,6 +271,12 @@ function pb_get_chapter_number( $post_name ) {
     return $out;
 }
 
+function pb_get_post_name( $id ) {
+    $lookup = \PressBooks\Book::getBookStructure();
+    $lookup = $lookup['__id_lookup'];
+    return($lookup[$id]['post_name']);
+}
+
 /**
  * Get chapter, front or back matter type
  *

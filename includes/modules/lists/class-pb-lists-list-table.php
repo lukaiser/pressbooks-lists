@@ -208,8 +208,8 @@ class Lists_List_Table extends \WP_List_Table {
             return "";
         }
         if($item["type"] == "chapter" || $item["type"] == "front-matter" || $item["type"] == "back-matter"){
-            $post = get_post($item["pid"]);
-            $n = pb_get_chapter_number($post->post_name);
+            $post_name = pb_get_post_name($item["pid"]);
+            $n = pb_get_chapter_number($post_name);
             return $n !== 0 ? $n : "";
         }else if($item["type"] == "part"){
             $options = get_option( 'pressbooks_theme_options_global' );
@@ -442,8 +442,8 @@ class Lists_List_Table extends \WP_List_Table {
         foreach($response as &$item){
             if($item["active"]){
                 if($item["type"] == "chapter"){
-                    $post = get_post($item["pid"]);
-                    $n = pb_get_chapter_number($post->post_name);
+                    $post_name = pb_get_post_name($item["pid"]);
+                    $n = pb_get_chapter_number($post_name);
                     $item["number"] = $n !== 0 ? $n : "";
                 }else if($item["type"] == "part"){
                     $options = get_option( 'pressbooks_theme_options_global' );

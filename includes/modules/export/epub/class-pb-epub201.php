@@ -1906,9 +1906,9 @@ class Epub201 extends Export {
         if(array_key_exists('query', $purl)){
             parse_str($purl['query'], $params);
             if(array_key_exists("p", $params)){
-                $post = get_post($params["p"]);
-                if($post){
-                    $slug = $post->post_name;
+                $post_name = pb_get_post_name($params["p"]);
+                if($post_name){
+                    $slug = $post_name;
                 }else{
                     return false;
                 }

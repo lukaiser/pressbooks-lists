@@ -150,8 +150,8 @@ class ListNodeShow {
             $options = get_option( 'pressbooks_theme_options_global' );
             if (@$options['chapter_numbers'] ){
                 $node = static::get_the_array($node);
-                $post = get_post($node["pid"]);
-                $node["numberArray"][0] = pb_get_chapter_number($post->post_name);
+                $post_name = pb_get_post_name($node["pid"]);
+                $node["numberArray"][0] = pb_get_chapter_number($post_name);
                 $output = implode(".", $node["numberArray"]);
             }else{
                 if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
