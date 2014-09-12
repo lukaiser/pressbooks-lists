@@ -40,9 +40,9 @@ class ListNodeShow {
         $p = get_post( $node['pid'] );
         $type = pb_get_section_type( $p );
         if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on' && $hasnum){
-            $output = '<a class="rev-link" href="'.$link.'#'.$node["id"].'"><span class="list-number">'.static::get_number($node)." - </span>".static::get_caption($node).'</a>';
+            $output = '<a class="rev-link rev-link-'.$node["type"].'" href="'.$link.'#'.$node["id"].'"><span class="rev-link-number">'.static::get_number($node)." - </span>".static::get_caption($node).'</a>';
         }else{
-            $output = '<a class="rev-link" href="'.$link.'#'.$node["id"].'">'.static::get_caption($node).'</a>';
+            $output = '<a class="rev-link rev-link-'.$node["type"].'" href="'.$link.'#'.$node["id"].'">'.static::get_caption($node).'</a>';
         }
 
 
@@ -66,9 +66,9 @@ class ListNodeShow {
         $p = get_post( $node['pid'] );
         $type = pb_get_section_type( $p );
         if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
-            $output = '( '.'<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_acronym($node).": ".static::get_number($node).'</a>'.' )';
+            $output = '( '.'<a class="rev-link rev-link-'.$node["type"].'" href="'.get_permalink($node["pid"]).'#'.$node["id"].'"><span class="rev-link-acronym">'.static::get_acronym($node).":</span> ".static::get_number($node).'</a>'.' )';
         }else{
-            $output = '( '.'<a class="rev-link" href="'.get_permalink($node["pid"]).'#'.$node["id"].'">'.static::get_acronym($node).": ".static::get_caption($node).'</a>'.' )';
+            $output = '( '.'<a class="rev-link rev-link-'.$node["type"].'"" href="'.get_permalink($node["pid"]).'#'.$node["id"].'"><span class="rev-link-acronym">'.static::get_acronym($node).":</span> ".static::get_caption($node).'</a>'.' )';
         }
         /**
          * Filter the default lists reference string output.
@@ -92,11 +92,11 @@ class ListNodeShow {
         $type = pb_get_section_type( $p );
         if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
             if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
-                $output = static::get_acronym($node)." ".static::get_number($node).": ";
+                $output = '<span class="caption-number caption-number-'.$node["type"].'"><span class="caption-acronym">'.static::get_acronym($node).' </span>'.static::get_number($node).": </span>";
             }else{
                 $options = get_option( 'pressbooks_theme_options_global' );
                 if (@$options['chapter_numbers'] ){
-                    $output = static::get_number($node)." - ";
+                    $output = '<span class="caption-number caption-number-'.$node["type"].'">'.static::get_number($node)." - </span>";
                 }else{
                     $output = "";
                 }
