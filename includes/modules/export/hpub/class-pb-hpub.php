@@ -1085,7 +1085,7 @@ class Hpub extends Export {
 					$m,
 					Sanitize\decode( $part['post_title'] ) );
 
-				$file_id = 'part-' . sprintf( "%03s", $i );
+				$file_id = 'part-' . sprintf( "%03s", $this->get_file_number($slug) );
 				$filename = "{$file_id}-{$slug}.html";
 
 				file_put_contents(
@@ -1251,9 +1251,6 @@ class Hpub extends Export {
 				$class .= \PressBooks\Taxonomy\chapter_type( $v['ID'] );
 				$subtitle = trim( get_post_meta( $v['ID'], 'pb_subtitle', true ) );
 				$author = trim( get_post_meta( $v['ID'], 'pb_section_author', true ) );
-				if (\PressBooks\Taxonomy\chapter_type( $v['ID'] ) !== 'numberless' ) {
-					$title = " $i. " . $title;
-				}
 				if ( \PressBooks\Taxonomy\chapter_type( $v['ID'] ) !== 'numberless' ) ++$i;
 			} elseif ( preg_match( '/^back-matter-/', $k ) ) {
                 if(get_post_meta( $v['ID'], 'invisible-in-toc', true ) == 'on'){
@@ -1765,10 +1762,12 @@ class Hpub extends Export {
         $section = @$lookup['__export_lookup'][$post_name];
 
         $i = 0;
-        if ( 'chapter' == $section  || 'front-matter' == $section || 'back-matter' == $section){
+        if ( 'chapter' == $section  || 'front-matter' == $section || 'back-matter' == $section || 'part' == $section){
             foreach ( $lookup['__export_lookup'] as $key => $val ) {
                 if ( $section == $val ) {
-                    ++$i;
+                    if($val != "part" || count(@$lookup['__lookup'][$key]['chapters'])){
+                        ++$i;
+                    }
                     if ( $key == $post_name ) break;
                 }
             }
@@ -1823,6 +1822,8 @@ class Hpub extends Export {
             }else{
                 return $i;
             }
+        }else if($section == 'part'){
+            return $i;
         }
         return 0;
 

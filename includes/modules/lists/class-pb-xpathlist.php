@@ -44,11 +44,14 @@ class XpathList implements iList {
      * Add a the content of a post to the list
      * @param string $content the content of the post
      * @param int $pid the id of the post
+     * @param string $post_name the post name
      * @param string $type the type of the content
+     * @param bool $active if the node is active and in the list or not
+     * @param string $caption the caption of the node
      */
-    function addContentToList($content, $pid, $type)
+    function addContentToList($content, $pid, $post_name, $type, $active, $caption)
     {
-        $c = new \PressBooks\Lists\ListChapter($this, $pid, $type);
+        $c = new \PressBooks\Lists\ListChapter($this, $pid, $post_name, $type, $active, $caption);
         $this->chapters[] = $c;
 
         if(trim($content) != "" && $type != "part"){

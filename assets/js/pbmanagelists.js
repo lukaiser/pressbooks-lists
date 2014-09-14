@@ -69,7 +69,7 @@ tinymce.PluginManager.add( 'pbmanagelists', function( editor ) {
             dom.setAttrib(node, "ID", Math.random().toString(36).substring(11));
         }
 
-        window.prompt("Copy to clipboard: Ctrl+C, Enter", '[rev id="'+dom.getAttrib(node, "ID")+'"/]');
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", '[ref id="'+dom.getAttrib(node, "ID")+'"/]');
     }
 
     /**

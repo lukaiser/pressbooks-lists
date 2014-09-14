@@ -42,12 +42,17 @@
                 lists_list.update(data);
             });
 
-            /* Promt reverence link*/
-            $('td.column-reverence a').click(function() {
-                var promt = PBL10.copy_reverence_popup;
+            /* Promt reference link*/
+            $('td.column-reference a').click(function() {
+                var promt = PBL10.copy_reference_popup;
                 var id = $(this).closest("tr").attr('id');
-                id = id.substr(id.indexOf("-") + 1);
-                window.prompt(promt, '[rev id="'+id+'"/]');
+                var parts = id.split("-", 2);
+                if(parts[0] == "c" || parts[0] == "p"){
+                    id = "p-"+parts[1];
+                }else{
+                    id = parts[1];
+                }
+                window.prompt(promt, '[ref id="'+id+'"/]');
             });
 
 

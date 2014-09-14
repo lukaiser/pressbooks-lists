@@ -57,7 +57,7 @@ class Lists_List_Table extends \WP_List_Table {
     function display() {
         wp_enqueue_style( 'lists-list-table', PB_PLUGIN_URL.'assets/css/pblistslisttable.css' );
         wp_register_script( 'lists-list-table', PB_PLUGIN_URL.'assets/js/pblistslisttable.js' );
-        $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),  'copy_reverence_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ));
+        $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),  'copy_reference_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ));
         wp_localize_script( 'lists-list-table', 'PBL10', $translation_array );
         wp_enqueue_script( 'lists-list-table' );
 
@@ -207,25 +207,11 @@ class Lists_List_Table extends \WP_List_Table {
         if(!$item["active"]){
             return "";
         }
-        if($item["type"] == "chapter" || $item["type"] == "front-matter" || $item["type"] == "back-matter"){
-            $post_name = pb_get_post_name($item["pid"]);
-            $n = pb_get_chapter_number($post_name);
-            return $n !== 0 ? $n : "";
-        }else if($item["type"] == "part"){
-            $options = get_option( 'pressbooks_theme_options_global' );
-            if ( ! @$options['chapter_numbers'] )
-                return "";
-            return $item["number"];
-        }else{
-            return ListNodeShow::get_number($item);
-        }
+        return ListNodeShow::get_number($item);
     }
 
-    function column_reverence($item) {
-        if($item["type"] != "chapter" && $item["type"] != "front-matter" && $item["type"] != "back-matter" && $item["type"] != "part"){
-            return '<a class="dashicons dashicons-admin-links" title="'.__( 'Get Reverence Shortcode', 'pressbooks' ).'"></a>';
-        }
-        return "";
+    function column_reference($item) {
+        return '<a class="dashicons dashicons-admin-links" title="'.__( 'Get Reference Shortcode', 'pressbooks' ).'"></a>';
     }
 
 
@@ -266,7 +252,7 @@ class Lists_List_Table extends \WP_List_Table {
             'type' => __( 'Type', 'pressbooks' ),
 			//'id' => __( 'ID', 'pressbooks' ),
 			'active' => __( 'In List', 'pressbooks' ),
-            'reverence' => __( 'Reference', 'pressbooks' ),
+            'reference' => __( 'Reference', 'pressbooks' ),
 		);
 
 		return $columns;
@@ -441,17 +427,7 @@ class Lists_List_Table extends \WP_List_Table {
         $response = $this->getItemsData();
         foreach($response as &$item){
             if($item["active"]){
-                if($item["type"] == "chapter"){
-                    $post_name = pb_get_post_name($item["pid"]);
-                    $n = pb_get_chapter_number($post_name);
-                    $item["number"] = $n !== 0 ? $n : "";
-                }else if($item["type"] == "part"){
-                    $options = get_option( 'pressbooks_theme_options_global' );
-                    if ( ! @$options['chapter_numbers'] )
-                        $item["number"] = "";
-                }else{
-                    $item["number"] = ListNodeShow::get_number($item);
-                }
+                $item["number"] = ListNodeShow::get_number($item);
             }else{
                 $item["number"] = "";
             }
@@ -515,7 +491,6 @@ class Lists_List_Table extends \WP_List_Table {
      * @return array
      */
     protected function getItemsData() {
-
         $bl = \PressBooks\Lists\Lists::get_book_lists(true);
         if($this->displayChapter){
             $data = $bl[$this->listtype]->getFlatArrayWithChapter();
@@ -530,24 +505,14 @@ class Lists_List_Table extends \WP_List_Table {
         foreach($data as $item){
             //add data for chapters and parts
             if($item["type"] == "chapter" || $item["type"] == "part" || $item["type"] == "front-matter" || $item["type"] == "back-matter"){
-                $p = get_post($item["pid"]);
                 if($item["type"] != "part"){
                     $item["id"] = "c-".$item['pid'];
                     $item["active"] = get_post_meta( $item['pid'], 'invisible-in-toc', true ) !== 'on';
-                    $item["caption"] = $p->post_title;
                     $lastChapter = $item;
                     $out[$item["id"]] = $item;
                 }else{
                     if($hasParts){
                         $item["id"] = "p-".$item['pid'];
-                        $item["active"] = get_post_meta( $item['pid'], 'pb_part_invisible', true ) !== 'on';
-                        if($item["active"]){
-                            $i++;
-                            $item["number"] = $i;
-                        }else{
-                            $item["number"] = "";
-                        }
-                        $item["caption"] = $p->post_title;
                         $out[$item["id"]] = $item;
                     }
                 }

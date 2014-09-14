@@ -56,7 +56,7 @@ class ListShow {
         }
         $content = "";
         if(count($chapter["childNodes"])>0 && $depth > 1){
-            $content .= '<'.$listtype.' class="sections rev-list-'.$chapter["childNodes"][0]["type"].'">';
+            $content .= '<'.$listtype.' class="sections ref-list-'.$chapter["childNodes"][0]["type"].'">';
             $content .= static::hierarchical_list_node($chapter, $depth, $link, $listtype);
             $content .="</".$listtype.">";
         }
@@ -83,12 +83,12 @@ class ListShow {
             $depth --;
         }
         $content = "";
-        if(array_key_exists("caption",$node) && $node["active"]){
+        if($node["type"] != "chapter" && $node["type"] != "front-matter" && $node["type"] != "back-matter" && $node["type"] != "part" && $node["active"]){
             $content = '<li class="section">';
             $content .= ListNodeShow::get_list_string($node, $link);
 
             if(count($node["childNodes"])>0 && ($depth == -1 || $depth > 0)){
-                $content .= '<'.$listtype.' class="sections rev-list-'.$node["childNodes"][0]["type"].'">';
+                $content .= '<'.$listtype.' class="sections ref-list-'.$node["childNodes"][0]["type"].'">';
                 foreach($node["childNodes"] as $e2){
                     $content .= static::hierarchical_list_node($e2, $depth, $link, $listtype);
                 }

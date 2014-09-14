@@ -1342,7 +1342,7 @@ class Epub201 extends Export {
 					( $this->numbered ? ( $this->romanizePartNumbers ? \PressBooks\L10n\romanize( $m ) : $m ) : '' ),
 					Sanitize\decode( $part['post_title'] ) );
 
-				$file_id = 'part-' . sprintf( "%03s", $i );
+				$file_id = 'part-' . sprintf( "%03s", $this->get_file_number($slug) );
 				$filename = "{$file_id}-{$slug}.{$this->filext}";
 
 				file_put_contents(
@@ -2183,10 +2183,12 @@ class Epub201 extends Export {
         $section = @$lookup['__export_lookup'][$post_name];
 
         $i = 0;
-        if ( 'chapter' == $section  || 'front-matter' == $section || 'back-matter' == $section){
+        if ( 'chapter' == $section  || 'front-matter' == $section || 'back-matter' == $section || 'part' == $section){
             foreach ( $lookup['__export_lookup'] as $key => $val ) {
                 if ( $section == $val ) {
-                    ++$i;
+                    if($val != "part" || count(@$lookup['__lookup'][$key]['chapters'])){
+                        ++$i;
+                    }
                     if ( $key == $post_name ) break;
                 }
             }
@@ -2235,6 +2237,8 @@ class Epub201 extends Export {
             }else{
                 return $i;
             }
+        }else if($section == 'part'){
+            return $i;
         }
         return 0;
 

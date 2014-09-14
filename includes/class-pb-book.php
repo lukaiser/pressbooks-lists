@@ -244,6 +244,9 @@ class Book {
 						$book_structure['__export_lookup'][$struct['post_name']] = $type;
 					}
 				} else {
+                    $book_structure['__id_lookup'][$struct['ID']] = $struct;
+                    $book_structure['__lookup'][$struct['post_name']] = $struct;
+                    $book_structure['__export_lookup'][$struct['post_name']] = 'part';
 					foreach ( $struct['chapters'] as $j => $chapter ) {
 						unset( $book_structure[$type][$i]['chapters'][$j]['post_parent'] );
 						if ( get_post_meta( $struct['ID'], 'pb_part_content', true ) && get_post_meta( $struct['ID'], 'pb_part_invisible', true ) !== 'on' )

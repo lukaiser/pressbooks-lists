@@ -35,7 +35,8 @@ class Lists {
      */
     static function init_hooks( ){
         add_filter( 'the_content', '\PressBooks\Lists\Lists::handle_content', 20 );
-        add_shortcode( 'rev', '\PressBooks\Lists\Lists::handle_rev_shortcode' );
+        add_shortcode( 'rev', '\PressBooks\Lists\Lists::handle_ref_shortcode' );
+        add_shortcode( 'ref', '\PressBooks\Lists\Lists::handle_ref_shortcode' );
         add_shortcode( 'LOT', '\PressBooks\Lists\Lists::handle_LOT_shortcode' );
         add_shortcode( 'LOI', '\PressBooks\Lists\Lists::handle_LOI_shortcode' );
         add_filter( 'pb_getBookStructure', '\PressBooks\Lists\Lists::getBookStructure');
@@ -106,14 +107,15 @@ class Lists {
     }
 
     /**
-     * Handles the reverence (rev) shortcode
+     * Handles the reference (ref) shortcode
      * @param $atts
      * @return string
      */
-    static function handle_rev_shortcode($atts){
+    static function handle_ref_shortcode($atts){
         extract( shortcode_atts(
                 array(
                     'id' => false,
+                    'd' => ""
                 ), $atts )
         );
         if(!$id){
@@ -121,7 +123,7 @@ class Lists {
         }
         $node = static::get_list_node_by_id($id);
         if($node){
-            return ListNodeShow::get_rev_string($node);
+            return ListNodeShow::get_ref_string($node, $d);
         }else{
             return "";
         }
@@ -225,19 +227,23 @@ class Lists {
 
             foreach ( $struct as $i => $val ) {
 
-                if ( isset( $val['post_content'] ) ) {
-                    static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $val['post_type'], $idsAndClasses);
+                if($val['post_type'] == "part"){
+                    $active = get_post_meta( $val['ID'], 'pb_part_invisible', true ) !== 'on';
+                }else{
+                    $p = get_post( $val['ID'] );
+                    $type = pb_get_section_type( $p );
+                    $active = ($type !== 'numberless' && get_post_meta( $val['ID'], 'invisible-in-toc', true ) !== 'on');
                 }
+                static::get_book_lists__handle_chapter($lists, $val['post_content'], $val['ID'], $val['post_name'], $val['post_type'], $active, $val['post_title'], $idsAndClasses);
 
-                if ( 'part' == $type ) {
+                if ( 'part' == $val['post_type'] ) {
 
                     // Do chapters, which are embedded in part structure
-                    foreach ( $book_contents[$type][$i]['chapters'] as $j => $val2 ) {
-
-                        if ( isset( $val2['post_content'] ) ) {
-                            static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $val2['post_type'], $idsAndClasses);
-                        }
-
+                    foreach ( $book_contents[$val['post_type']][$i]['chapters'] as $j => $val2 ) {
+                        $p = get_post( $val2['ID'] );
+                        $type = pb_get_section_type( $p );
+                        $active = ($type !== 'numberless' && get_post_meta( $val2['ID'], 'invisible-in-toc', true ) !== 'on');
+                        static::get_book_lists__handle_chapter($lists, $val2['post_content'], $val2['ID'], $val2['post_name'], $val2['post_type'], $active, $val2['post_title'], $idsAndClasses);
                     }
                 }
             }
@@ -292,11 +298,14 @@ class Lists {
      * @param array $lists the lists
      * @param string $content the content of the chapter
      * @param int $pid the id of the post
+     * @param string $post_name the post name
      * @param string $type the type of the content
+     * @param bool $active if the node is active and in the list or not
+     * @param string $caption the caption of the node
      * @param bool $idsAndClasses If Ids and in-list class should be added to DOMElements not having them
      */
-    private static function get_book_lists__handle_chapter($lists, $content, $pid, $type, $idsAndClasses = false){
-        if($idsAndClasses){
+    private static function get_book_lists__handle_chapter($lists, $content, $pid, $post_name, $type, $active, $caption, $idsAndClasses = false){
+        if($idsAndClasses && trim($content) != ""){
             $changed = false;
             foreach($lists as $list){
                 $ncontent = $list->contentAddMissingIdAndClasses($content);
@@ -314,7 +323,7 @@ class Lists {
             }
         }
         foreach($lists as $list){
-            $list->addContentToList($content, $pid, $type);
+            $list->addContentToList($content, $pid, $post_name, $type, $active, $caption);
         }
     }
 

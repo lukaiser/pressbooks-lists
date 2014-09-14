@@ -271,6 +271,36 @@ function pb_get_chapter_number( $post_name ) {
     return $out;
 }
 
+/**
+ * Get "real" chapter number
+ *
+ * @param $post_name
+ *
+ * @return int
+ */
+function pb_get_part_number( $id ) {
+
+    $options = get_option( 'pressbooks_theme_options_global' );
+    if ( ! @$options['chapter_numbers'] )
+        return 0;
+    $lookup = \PressBooks\Book::getBookStructure();
+    $i = 0;
+    foreach ( $lookup["part"] as $key => $val ) {
+        $active = (get_post_meta( $val['ID'], 'pb_part_invisible', true ) !== 'on');
+        if($active){
+            $i++;
+            if($id == $val["ID"]){
+                if($active){
+                    return $i;
+                }else{
+                    return 0;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 function pb_get_post_name( $id ) {
     $lookup = \PressBooks\Book::getBookStructure();
     $lookup = $lookup['__id_lookup'];

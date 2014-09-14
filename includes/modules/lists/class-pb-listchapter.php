@@ -33,16 +33,34 @@ class ListChapter {
      * @var string the type of the post
      */
     public $type;
+    /**
+     * @var bool if the node is active and in the list or not
+     */
+    public $active;
+    /**
+     * @var string the caption of the node
+     */
+    public $caption;
+    /**
+     * @var string the post name
+     */
+    public $post_name;
 
     /**
      * @param \PressBooks\Lists\iList $list the list the chapter is in
      * @param int $pid the pid
+     * @param string $post_name the post name
      * @param string $type the type of the content
+     * @param bool $active if the node is active and in the list or not
+     * @param string $caption the caption of the node
      */
-    function __construct($list = null, $pid, $type){
+    function __construct($list = null, $pid, $post_name, $type, $active, $caption){
         $this->list = $list;
         $this->pid = $pid;
+        $this->post_name = $post_name;
         $this->type = $type;
+        $this->active = $active;
+        $this->caption = $caption;
         $this->child = array();
     }
 
@@ -130,7 +148,7 @@ class ListChapter {
      */
     function getFlatArrayWithChapter(){
         $out = array();
-        $out[$this->pid] = array("pid"=>$this->pid, "type"=>$this->type);
+        $out[$this->pid] = $this->getNodeAsArray();
         foreach($this->child as $child){
             $out[$child->id] = $child->getNodeAsArray();
         }
@@ -143,8 +161,7 @@ class ListChapter {
      * @return array
      */
     function getHierarchicalArray(){
-        $out = array();
-        $out["pid"] = $this->pid;
+        $out = $this->getNodeAsArray();
         $out["childNodes"] = array();
         foreach($this->child as $child){
             if($child->active){
@@ -165,11 +182,30 @@ class ListChapter {
     }
 
     /**
+     * Returns the node as array
+     * @return array
+     */
+    function getNodeAsArray(){
+        $out = array();
+        $out["id"] = $this->pid;
+        $out["pid"] = $this->pid;
+        $out["type"] = $this->type;
+        $out["numberArray"] = array();
+        $out["onGoingNumber"] = '';
+        $out["caption"] = $this->caption;
+        $out["active"] = $this->active;
+        return $out;
+    }
+
+    /**
      * Returns a node by a id
      * @param string $id id of the node
      * @return \PressBooks\Lists\ListNode|false
      */
     function getNodeById($id){
+        if($id == $this->post_name || $id == "p-".$this->pid){
+            return $this;
+        }
         foreach($this->child as $child){
             if($n = $child->getNodeById($id)){
                 return $n;

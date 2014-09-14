@@ -19,9 +19,12 @@ interface iList {
      * Add a the content of a post to the list
      * @param string $content the content of the post
      * @param int $pid the id of the post
+     * @param string $post_name the post name
      * @param string $type the type of the content
+     * @param bool $active if the node is active and in the list or not
+     * @param string $caption the caption of the node
      */
-    function addContentToList($content, $pid, $type);
+    function addContentToList($content, $pid, $post_name, $type, $active, $caption);
 
     /**
      * Adds missing html ids and in-list and not-in-list classes to a post
