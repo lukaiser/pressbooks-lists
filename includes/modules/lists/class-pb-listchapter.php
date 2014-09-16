@@ -158,9 +158,10 @@ class ListChapter {
     /**
      * Returns an array representing the hierarchy of the nodes
      * Only active nodes
+     * @param boolean $dummy Export Dummy nodes if no parent
      * @return array
      */
-    function getHierarchicalArray(){
+    function getHierarchicalArray($dummy = false){
         $out = $this->getNodeAsArray();
         $out["childNodes"] = array();
         foreach($this->child as $child){
@@ -169,13 +170,21 @@ class ListChapter {
                 $a["childNodes"] = array();
                 $down = $this->list->getDepthOfTagname($child->type);
                 $in = &$out["childNodes"];
+                $dnd = false;
                 for($i = 0; $i < $down; $i++){
                     if(count($in) == 0){
-                        $in[] = array("childNodes" => array());
+                        if($dummy){
+                            $in[] = array("childNodes" => array());
+                        }else{
+                            $dnd = true;
+                            break;
+                        }
                     }
                     $in = &$in[count($in)-1]["childNodes"];
                 }
-                $in[] = $a;
+                if(!$dnd){
+                    $in[] = $a;
+                }
             }
         }
         return $out;
