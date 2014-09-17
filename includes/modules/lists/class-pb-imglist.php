@@ -27,7 +27,8 @@ class ImgList extends XpathList {
      */
     protected function addCaptionPrefixToNode($xpath, $node, $ndata, $prefix)
     {
-        parent::addCaptionPrefixToNode($xpath, $node, $ndata, $prefix);
+        $prefix2 = ListNodeShow::get_caption_prefix($ndata, true);
+        parent::addCaptionPrefixToNode($xpath, $node, $ndata, $prefix2);
         $c = $xpath->query("ancestor::div[contains(concat(' ', @class, ' '), 'wp-caption')]/p[contains(concat(' ', @class, ' '), 'wp-caption-text')]", $node)->item(0);
         if(get_class($c) == "DOMElement"){
             $c->nodeValue = $prefix.$c->nodeValue;

@@ -100,19 +100,28 @@ class ListNodeShow {
     /**
      * Returns a prefix for captions e.g. "Table 1.1.1: "
      * @param \PressBooks\Lists\ListNode $node the node
+     * @param boolean $pure With out html tags
      * @return string
      */
-    static function get_caption_prefix($node){
+    static function get_caption_prefix($node, $pure = false){
         $node = static::get_the_array($node);
         $p = get_post( $node['pid'] );
         $type = pb_get_section_type( $p );
         if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
             if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
-                $output = '<span class="caption-number caption-number-'.$node["type"].'"><span class="caption-acronym">'.static::get_acronym($node).' </span>'.static::get_number($node).": </span>";
+                $output = "";
+                $output .= !$pure ? '<span class="caption-number caption-number-'.$node["type"].'"><span class="caption-acronym">' : '';
+                $output .= static::get_acronym($node).' ';
+                $output .= !$pure ? '</span>' : '';
+                $output .= static::get_number($node).": ";
+                $output .= !$pure ? "</span>" : "";
             }else{
                 $options = get_option( 'pressbooks_theme_options_global' );
                 if (@$options['chapter_numbers'] ){
-                    $output = '<span class="caption-number caption-number-'.$node["type"].'">'.static::get_number($node)." - </span>";
+                    $output = "";
+                    $output .= !$pure ? '<span class="caption-number caption-number-'.$node["type"].'">' : '';
+                    $output .= static::get_number($node)." - ";
+                    $output .= !$pure ? "</span>" : '';
                 }else{
                     $output = "";
                 }
