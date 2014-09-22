@@ -57,6 +57,13 @@
 
             $('.dashicons-info').qtip();
 
+            $('.heading-filter').live('change', function(){
+                var headingFilter = $(this).val();
+                if( headingFilter != '' ){
+                    document.location.href = headingFilter;
+                }
+            });
+
 
         },
 

@@ -263,6 +263,34 @@ class Lists_List_Table extends \WP_List_Table {
         return "";
     }
 
+    function extra_tablenav( $which ) {
+        if($this->listtype == "h"){
+            if ( $which == "top" ){
+                $current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+                $current_url = remove_query_arg( 'heading-filter', $current_url );
+                $toc = pb_headings_to_toc();
+                $selected = array_key_exists('heading-filter', $_GET) ? $_GET['heading-filter'] : $toc;
+                echo '<div class="filter">';
+                    echo'<lable>'.__( 'Show: ', 'pressbooks' ).'</lable>';
+                    echo'<select name="heading-filter" class="heading-filter">';
+                        $url = add_query_arg('heading-filter', '1', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 1 ? ' selected = "selected"' : '').'>'.__( 'Heading 1', 'pressbooks' ).($toc == 1?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                        $url = add_query_arg('heading-filter', '2', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 2 ? ' selected = "selected"' : '').'>'.__( 'Heading 2 and higher', 'pressbooks' ).($toc == 2?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                        $url = add_query_arg('heading-filter', '3', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 3 ? ' selected = "selected"' : '').'>'.__( 'Heading 3 and higher', 'pressbooks' ).($toc == 3?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                        $url = add_query_arg('heading-filter', '4', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 4 ? ' selected = "selected"' : '').'>'.__( 'Heading 4 and higher', 'pressbooks' ).($toc == 4?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                        $url = add_query_arg('heading-filter', '5', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 5 ? ' selected = "selected"' : '').'>'.__( 'Heading 5 and higher', 'pressbooks' ).($toc == 5?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                        $url = add_query_arg('heading-filter', '6', $current_url );
+                        echo '<option value="'.$url.'"'.($selected == 6 ? ' selected = "selected"' : '').'>'.__( 'Heading 6 and higher', 'pressbooks' ).($toc == 6?' ('.__( 'Output', 'pressbooks' ).')':'').'</option>';
+                    echo '</select>';
+                echo '</div>';
+            }
+        }
+    }
+
 
 	/**
 	 * This method dictates the table's columns and titles.
@@ -335,8 +363,21 @@ class Lists_List_Table extends \WP_List_Table {
 		$sortable = $this->get_sortable_columns();
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 
-		// Get data, sort
+		// Get data, filter
 		$data = $this->getItemsData();
+        if($this->listtype == "h"){
+            $hlevel = array_key_exists('heading-filter', $_GET) ? $_GET['heading-filter'] : pb_headings_to_toc();
+            $data2 = array();
+            foreach($data as $item){
+                if(($item["type"] != "h1" && $item["type"] != "h2" && $item["type"] != "h3" && $item["type"] != "h4" && $item["type"] != "h5" && $item["type"] != "h6")
+                    || ($item["type"] == "h1" && $hlevel >= 1) || ($item["type"] == "h2" && $hlevel >= 2) || ($item["type"] == "h3" && $hlevel >= 3) || ($item["type"] == "h4" && $hlevel >= 4) || ($item["type"] == "h5" && $hlevel >= 5) || ($item["type"] == "h6" && $hlevel >= 6)){
+                    $data2[] = $item;
+                }
+            }
+            $data = $data2;
+        }
+
+        // sort
 		$valid_cols = $this->get_sortable_columns();
 
 		$order = ( ! empty( $_REQUEST['order'] ) ) ? $_REQUEST['order'] : 'asc'; // If no order, default to asc
