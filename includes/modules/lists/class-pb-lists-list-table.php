@@ -55,6 +55,9 @@ class Lists_List_Table extends \WP_List_Table {
 	}
 
     function display() {
+        wp_enqueue_style('qtip', PB_PLUGIN_URL.'assets/css/jquery.qtip.min.css', null, false, false);
+        wp_enqueue_script('qtip', PB_PLUGIN_URL.'assets/js/jquery.qtip.min.js', array('jquery'), false, true);
+
         wp_enqueue_style( 'lists-list-table', PB_PLUGIN_URL.'assets/css/pblistslisttable.css' );
         wp_register_script( 'lists-list-table', PB_PLUGIN_URL.'assets/js/pblistslisttable.js' );
         $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),  'copy_reference_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ));
@@ -132,14 +135,8 @@ class Lists_List_Table extends \WP_List_Table {
 	}
 
     function column_type($item){
-        if($item["type"] == "chapter"){
-            return __( 'Chapter', 'pressbooks' );
-        }else if($item["type"] == "front-matter"){
-            return __( 'Front-Matter', 'pressbooks' );
-        }else if($item["type"] == "back-matter"){
-            return __( 'Back-Matter', 'pressbooks' );
-        }else if($item["type"] == "part"){
-            return __( 'Part', 'pressbooks' );
+        if($item["type"] == "chapter" || $item["type"] == "front-matter" || $item["type"] == "back-matter" || $item["type"] == "part"){
+            return $this->get_nice_type($item["type"]);
         }
         $tagnames = \PressBooks\Lists\Lists::get_book_lists()[$this->listtype]->getTypes();
         if(is_array($tagnames)){
@@ -150,29 +147,18 @@ class Lists_List_Table extends \WP_List_Table {
                     if( $tagname == $item["type"] ){
                         $selected = ' selected = "selected"';
                     }
-                    $tagtitle = $tagname;
-                    if($tagname == "h1"){
-                        $tagtitle =  __( 'Heading 1', 'pressbooks' );
-                    }elseif($tagname == "h2"){
-                        $tagtitle =  __( 'Heading 2', 'pressbooks' );
-                    }elseif($tagname == "h3"){
-                        $tagtitle =  __( 'Heading 3', 'pressbooks' );
-                    }elseif($tagname == "h4"){
-                        $tagtitle =  __( 'Heading 4', 'pressbooks' );
-                    }elseif($tagname == "h5"){
-                        $tagtitle =  __( 'Heading 5', 'pressbooks' );
-                    }elseif($tagname == "h6"){
-                        $tagtitle =  __( 'Heading 6', 'pressbooks' );
+                    $tagtitle = $this->get_nice_type($tagname);
+                    if($tagtitle == ""){
+                        $tagtitle = $tagname;
                     }
                     $out .= '<option value="'.$tagname.'" '.$selected.'>'.$tagtitle.'</option>';
                 }
             $out .= '</select>';
             return($out);
         }else{
-            if($item["type"] == "img"){
-                return __( 'Image', 'pressbooks' );
-            }elseif($item["type"] == "table"){
-                return __( 'Table', 'pressbooks' );
+            $name = $this->get_nice_type($item["type"]);
+            if($name != ""){
+                return $name;
             }
             return $item["type"];
         }
@@ -204,6 +190,17 @@ class Lists_List_Table extends \WP_List_Table {
     }
 
     function column_number($item) {
+        $options = get_option( 'pressbooks_theme_options_global' );
+        if($this->listtype == "h" && !@$options['chapter_numbers']){
+            return '<span class="dashicons dashicons-info" title="'.__( 'Chapter numbers are disabled in the Theme Options', 'pressbooks' ).'"></a>';
+        }
+        if(!Lists::add_numbers_to_list_elements() && $item["type"] != "chapter" && $item["type"] != "part" && $item["type"] != "front-matter" && $item["type"] != "back-matter"){
+            return '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
+        }
+        $hlevel = Lists::add_numbers_to_heading_levels();
+        if (($item["type"] == "h1" && $hlevel < 1) || ($item["type"] == "h2" && $hlevel < 2) || ($item["type"] == "h3" && $hlevel < 3) || ($item["type"] == "h4" && $hlevel < 4) || ($item["type"] == "h5" && $hlevel < 5) || ($item["type"] == "h6" && $hlevel < 6)){
+            return '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
+        }
         if(!$item["active"]){
             return "";
         }
@@ -236,6 +233,35 @@ class Lists_List_Table extends \WP_List_Table {
             $item["id"] // The value of the checkbox should be the record's id
 		);
 	}
+
+    function get_nice_type($type){
+        if($type == "h1"){
+            return __( 'Heading 1', 'pressbooks' );
+        }elseif($type == "h2"){
+            return __( 'Heading 2', 'pressbooks' );
+        }elseif($type == "h3"){
+            return  __( 'Heading 3', 'pressbooks' );
+        }elseif($type == "h4"){
+            return  __( 'Heading 4', 'pressbooks' );
+        }elseif($type == "h5"){
+            return  __( 'Heading 5', 'pressbooks' );
+        }elseif($type == "h6"){
+            return  __( 'Heading 6', 'pressbooks' );
+        }else if($type == "img"){
+            return __( 'Image', 'pressbooks' );
+        }elseif($type == "table"){
+            return __( 'Table', 'pressbooks' );
+        }else if($type == "chapter"){
+            return __( 'Chapter', 'pressbooks' );
+        }else if($type == "front-matter"){
+            return __( 'Front-Matter', 'pressbooks' );
+        }else if($type == "back-matter"){
+            return __( 'Back-Matter', 'pressbooks' );
+        }else if($type == "part"){
+            return __( 'Part', 'pressbooks' );
+        }
+        return "";
+    }
 
 
 	/**
@@ -425,8 +451,16 @@ class Lists_List_Table extends \WP_List_Table {
         }
 
         $response = $this->getItemsData();
+        $hlevel = Lists::add_numbers_to_heading_levels();
+        $options = get_option( 'pressbooks_theme_options_global' );
         foreach($response as &$item){
-            if($item["active"]){
+            if($this->listtype == "h" && !@$options['chapter_numbers']){
+                $item["number"] = '<span class="dashicons dashicons-info" title="'.__( 'Chapter numbers are disabled in the Theme Options', 'pressbooks' ).'"></a>';
+            }else if(!Lists::add_numbers_to_list_elements() && $item["type"] != "chapter" && $item["type"] != "part" && $item["type"] != "front-matter" && $item["type"] != "back-matter"){
+                $item["number"] = '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
+            }else if (($item["type"] == "h1" && $hlevel < 1) || ($item["type"] == "h2" && $hlevel < 2) || ($item["type"] == "h3" && $hlevel < 3) || ($item["type"] == "h4" && $hlevel < 4) || ($item["type"] == "h5" && $hlevel < 5) || ($item["type"] == "h6" && $hlevel < 6)){
+                $item["number"] = '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
+            }else if($item["active"]){
                 $item["number"] = ListNodeShow::get_number($item);
             }else{
                 $item["number"] = "";

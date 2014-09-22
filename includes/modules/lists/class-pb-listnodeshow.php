@@ -28,17 +28,9 @@ class ListNodeShow {
     static function get_list_string($node, $link=false){
         $node = static::get_the_array($node);
         $link = static::get_href($node, $link);
-        $hasnum = true;
-        if($node["type"] == "h1" || $node["type"] == "h2" || $node["type"] == "h3" || $node["type"] == "h4" || $node["type"] == "h5" || $node["type"] == "h6"){
-            $options = get_option( 'pressbooks_theme_options_global' );
-            if (!@$options['chapter_numbers'] ){
-                $hasnum = false;
-            }
-        }
-        $p = get_post( $node['pid'] );
-        $type = pb_get_section_type( $p );
-        if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on' && $hasnum){
-            $output = '<a class="ref-link ref-link-'.$node["type"].'" href="'.$link.'"><span class="ref-link-number">'.static::get_number($node)." - </span>".static::get_caption($node).'</a>';
+        $num = static::get_number($node);
+        if( $num != "" ){
+            $output = '<a class="ref-link ref-link-'.$node["type"].'" href="'.$link.'"><span class="ref-link-number">'.$num." - </span>".static::get_caption($node).'</a>';
         }else{
             $output = '<a class="ref-link ref-link-'.$node["type"].'" href="'.$link.'">'.static::get_caption($node).'</a>';
         }
@@ -62,25 +54,21 @@ class ListNodeShow {
      */
     static function get_ref_string($node, $settings=""){
         $node = static::get_the_array($node);
-        if($node["type"] == "part"){
-            $active = $node["active"];
-        }else{
-            $p = get_post( $node['pid'] );
-            $type = pb_get_section_type( $p );
-            $active = ($type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on');
-        }
-        if($active){
-            $db = true; $da = true; $dn = true; $dc = false;
-        }else{
-            $db = true; $da = true; $dn = false; $dc = true;
-        }
+        $num = static::get_number($node);
+
+        $db = true;
+        $da = true;
+        $dn = ($num != "");
+        $dc = !$dn;
+
         $db = strpos($settings, "b") !== false ? false : $db;
         $da = strpos($settings, "a") !== false ? false : $da;
         $dn = strpos($settings, "n") !== false ? false : $dn;
         $dc = strpos($settings, "C") !== false ? true : $dc;
+
         $output = $da ? '<span class="ref-link-acronym">'.static::get_acronym($node).":</span>" : "";
         $output .= $da && $dn ? " " : "";
-        $output = $dn ? '<span class="ref-link-number">'.$output.static::get_number($node)."</span>" : $output;
+        $output = $dn ? '<span class="ref-link-number">'.$output.$num."</span>" : $output;
         $output .= $dc && $output != "" ? " " : "";
         $output .= $dc && $dn ? "- " : "";
         $output .= $dc ? static::get_caption($node) : "";
@@ -105,26 +93,21 @@ class ListNodeShow {
      */
     static function get_caption_prefix($node, $pure = false){
         $node = static::get_the_array($node);
-        $p = get_post( $node['pid'] );
-        $type = pb_get_section_type( $p );
-        if( $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
-            if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
+        $num = static::get_number($node);
+
+        if( $num != ""){
+            if(static::real_element($node)){
                 $output = "";
                 $output .= !$pure ? '<span class="caption-number caption-number-'.$node["type"].'"><span class="caption-acronym">' : '';
                 $output .= static::get_acronym($node).' ';
                 $output .= !$pure ? '</span>' : '';
-                $output .= static::get_number($node).": ";
+                $output .= $num.": ";
                 $output .= !$pure ? "</span>" : "";
             }else{
-                $options = get_option( 'pressbooks_theme_options_global' );
-                if (@$options['chapter_numbers'] ){
-                    $output = "";
-                    $output .= !$pure ? '<span class="caption-number caption-number-'.$node["type"].'">' : '';
-                    $output .= static::get_number($node)." - ";
-                    $output .= !$pure ? "</span>" : '';
-                }else{
-                    $output = "";
-                }
+                $output = "";
+                $output .= !$pure ? '<span class="caption-number caption-number-'.$node["type"].'">' : '';
+                $output .= $num." - ";
+                $output .= !$pure ? "</span>" : '';
             }
         }else{
             $output = "";
@@ -175,17 +158,31 @@ class ListNodeShow {
         if($node["active"]){
             $options = get_option( 'pressbooks_theme_options_global' );
             if (@$options['chapter_numbers'] ){
-                if($node["type"] != "part"){
-                    $node = static::get_the_array($node);
-                    $post_name = pb_get_post_name($node["pid"]);
-                    $node["numberArray"][0] = pb_get_chapter_number($post_name);
-                    $output = implode(".", $node["numberArray"]);
+                if(static::element($node)){
+                    $p = get_post( $node['pid'] );
+                    $type = pb_get_section_type( $p );
+                    if(Lists::add_numbers_to_list_elements() && $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
+                        $hlevel = Lists::add_numbers_to_heading_levels();
+                        if(($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6")
+                        || ($node["type"] == "h1" && $hlevel >= 1) || ($node["type"] == "h2" && $hlevel >= 2) || ($node["type"] == "h3" && $hlevel >= 3) || ($node["type"] == "h4" && $hlevel >= 4) || ($node["type"] == "h5" && $hlevel >= 5) || ($node["type"] == "h6" && $hlevel >= 6)){
+                            $post_name = pb_get_post_name($node["pid"]);
+                            $node["numberArray"][0] = pb_get_chapter_number($post_name);
+                            $output = implode(".", $node["numberArray"]);
+                        }
+                    }
                 }else{
-                    $output = pb_get_part_number($node["pid"]);
+                    if($node["type"] != "part"){
+                        $post_name = pb_get_post_name($node["pid"]);
+                        $output = pb_get_chapter_number($post_name);
+                    }else{
+                        $output = pb_get_part_number($node["pid"]);
+                    }
                 }
             }else{
-                if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6"){
-                    $output = $node["onGoingNumber"];
+                if(Lists::add_numbers_to_list_elements()){
+                    if(static::real_element($node)){
+                        $output = $node["onGoingNumber"];
+                    }
                 }
             }
         }
@@ -260,7 +257,7 @@ class ListNodeShow {
             }
         }
 
-        if($node["type"] == "chapter" || $node["type"] == "front-matter" || $node["type"] == "back-matter" || $node["type"] == "part"){
+        if(!static::element($node)){
             return($link);
         }
         return($link.'#'.$node["id"]);
@@ -280,6 +277,33 @@ class ListNodeShow {
             return($node->getNodeAsArray());
         }
         return($node);
+    }
+
+    /**
+     * If it is a list element
+     * @param \PressBooks\Lists\ListNode $node the node
+     * @return array
+     */
+    static private function element($node){
+        $node = static::get_the_array($node);
+        if($node["type"] != "chapter" && $node["type"] != "front-matter" && $node["type"] != "back-matter" && $node["type"] != "part"){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * If it is a real list element
+     * Not a chapter, part or heading
+     * @param \PressBooks\Lists\ListNode $node the node
+     * @return array
+     */
+    static private function real_element($node){
+        $node = static::get_the_array($node);
+        if($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6" && $node["type"] != "chapter" && $node["type"] != "front-matter" && $node["type"] != "back-matter" && $node["type"] != "part"){
+            return true;
+        }
+        return false;
     }
 
 } 

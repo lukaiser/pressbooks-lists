@@ -62,10 +62,11 @@ class Lists {
      * @return string
      */
     static function handle_content($content){
-
-        $bl = \PressBooks\Lists\Lists::get_book_lists();
-        foreach($bl as $l){
-            $content = $l->addCaptionPrefix($content);
+        if(Lists::add_numbers_to_list_elements()){
+            $bl = \PressBooks\Lists\Lists::get_book_lists();
+            foreach($bl as $l){
+                $content = $l->addCaptionPrefix($content);
+            }
         }
         return $content;
     }
@@ -287,6 +288,35 @@ class Lists {
             return($bl[$list]->getChapterByPid($id));
         }
         return(false);
+    }
+
+
+    /**
+     * If numbers should be added to list elements
+     * Default is false. Can be changed by a hook
+     * @return boolean
+     */
+    static function add_numbers_to_list_elements(){
+        /**
+         * Filter if numbers should be added to list elements
+         *
+         * @param boolean $default  The default
+         */
+        return apply_filters( 'pb_lists_add_numbers_to_list_elements', false );
+    }
+
+    /**
+     * To which heading levels numbers should be added
+     * Default is all 6. Can be changed by a hook
+     * @return int
+     */
+    static function add_numbers_to_heading_levels(){
+        /**
+         * Filter to which heading levels numbers should be added
+         *
+         * @param int $default  The default
+         */
+        return apply_filters( 'pb_lists_add_numbers_to_heading_levels', 6 );
     }
 
     /**********************

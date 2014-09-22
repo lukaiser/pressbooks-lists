@@ -37,8 +37,6 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 		// Map has a [ Part -> Chapter ] <NavPoint> hierarchy
 		$i = 1;
 		$part_open = false;
-        $options = get_option( 'pressbooks_theme_options_global' );
-        $shownumber = @$options['chapter_numbers'];
 		foreach ( $manifest as $k => $v ) {
 
 			if ( true == $part_open && ! preg_match( '/^chapter-/', $k ) ) {
@@ -78,7 +76,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                             foreach($subtitle["childNodes"] as $subtitle){
                                 if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                     $i++;
-                                    $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                    $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                    $text .= $text != "" ? ' - ' : '';
                                     $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                     printf( '
                                 <navPoint id="%s" playOrder="%s">
@@ -89,7 +88,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                                         foreach($subtitle["childNodes"] as $subtitle){
                                             if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                                 $i++;
-                                                $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                                $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                                $text .= $text != "" ? ' - ' : '';
                                                 $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                                 printf( '
                                             <navPoint id="%s" playOrder="%s">
@@ -100,7 +100,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                                                     foreach($subtitle["childNodes"] as $subtitle){
                                                         if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                                             $i++;
-                                                            $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                                            $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                                            $text .= $text != "" ? ' - ' : '';
                                                             $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                                             printf( '
                                                         <navPoint id="%s" playOrder="%s">
@@ -111,7 +112,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                                                                 foreach($subtitle["childNodes"] as $subtitle){
                                                                     if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                                                         $i++;
-                                                                        $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                                                        $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                                                        $text .= $text != "" ? ' - ' : '';
                                                                         $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                                                         printf( '
                                                                     <navPoint id="%s" playOrder="%s">
@@ -122,7 +124,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                                                                             foreach($subtitle["childNodes"] as $subtitle){
                                                                                 if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                                                                     $i++;
-                                                                                    $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                                                                    $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                                                                    $text .= $text != "" ? ' - ' : '';
                                                                                     $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                                                                     printf( '
                                                                                 <navPoint id="%s" playOrder="%s">
@@ -133,7 +136,8 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
                                                                                         foreach($subtitle["childNodes"] as $subtitle){
                                                                                             if(array_key_exists("caption",$subtitle) && $subtitle["active"]){
                                                                                                 $i++;
-                                                                                                $text = $shownumber ? \PressBooks\Lists\ListNodeShow::get_number($subtitle).' - ' : '';
+                                                                                                $text = \PressBooks\Lists\ListNodeShow::get_number($subtitle);
+                                                                                                $text .= $text != "" ? ' - ' : '';
                                                                                                 $text .= \PressBooks\Lists\ListNodeShow::get_caption($subtitle);
                                                                                                 printf( '
                                                                                             <navPoint id="%s" playOrder="%s">

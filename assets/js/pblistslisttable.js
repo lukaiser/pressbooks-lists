@@ -55,6 +55,8 @@
                 window.prompt(promt, '[ref id="'+id+'"/]');
             });
 
+            $('.dashicons-info').qtip();
+
 
         },
 
@@ -87,7 +89,7 @@
                     $("tr").each(function(){
                         var id = $(this).attr('id');
                         if(response[id]){
-                            $(this).find(".column-number").text(response[id]["number"]);
+                            $(this).find(".column-number").html(response[id]["number"]);
                             if(response[id]["active"]){
                                 $(this).removeClass("inactive");
                                 $(this).find("td.column-active input").prop('checked', true);
@@ -102,6 +104,7 @@
                             }
                         }
                     });
+                    $('.dashicons-info').qtip();
                 }
             });
         }
