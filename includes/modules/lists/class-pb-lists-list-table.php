@@ -270,6 +270,7 @@ class Lists_List_Table extends \WP_List_Table {
                 $current_url = remove_query_arg( 'heading-filter', $current_url );
                 $toc = pb_headings_to_toc();
                 $selected = array_key_exists('heading-filter', $_GET) ? $_GET['heading-filter'] : $toc;
+                $selected = $selected == 0 ? 1: $selected;
                 echo '<div class="filter">';
                     echo'<lable>'.__( 'Show: ', 'pressbooks' ).'</lable>';
                     echo'<select name="heading-filter" class="heading-filter">';
@@ -367,6 +368,7 @@ class Lists_List_Table extends \WP_List_Table {
 		$data = $this->getItemsData();
         if($this->listtype == "h"){
             $hlevel = array_key_exists('heading-filter', $_GET) ? $_GET['heading-filter'] : pb_headings_to_toc();
+            $hlevel = $hlevel == 0 ? 1: $hlevel;
             $data2 = array();
             foreach($data as $item){
                 if(($item["type"] != "h1" && $item["type"] != "h2" && $item["type"] != "h3" && $item["type"] != "h4" && $item["type"] != "h5" && $item["type"] != "h6")
