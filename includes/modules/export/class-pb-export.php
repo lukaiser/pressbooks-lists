@@ -136,15 +136,15 @@ abstract class Export {
 	}
 	
 	/**
-	 * Is the parse sections option true?
+	 * How many headers should be added to TOC
 	 *
 	 * @return bool
 	 */
-	static function shouldParseSections() {
+	static function headingsToTOC() {
 
 		$options = get_option( 'pressbooks_theme_options_global' );
 		
-		return ( @$options['parse_sections'] );
+		return ( @$options['parse_headings'] );
 	}
 
 

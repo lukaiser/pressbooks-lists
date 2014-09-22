@@ -9,8 +9,8 @@
 								<?php if ($fm['post_status'] != 'publish' || get_post_meta( $fm['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
 								<li class="front-matter <?php echo pb_get_section_type( get_post($fm['ID']) ) ?>"><a href="<?php echo get_permalink($fm['ID']); ?>"><?php if(($c = pb_get_chapter_number($fm['post_name'])) !== 0) echo '<span class="toc-front-matter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $fm['post_title'] );?></a>
                                     <?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $fm['ID'] );
-                                    if ( $subtitle && pb_should_parse_sections() ){?>
-                                        <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+                                    if ( $subtitle && pb_headings_to_toc() > 0 ){?>
+                                        <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, pb_headings_to_toc()+1);?>
                                     <?php } ?>
                                 </li>
 								<?php endforeach; ?>
@@ -28,8 +28,8 @@
 										<?php if ($chapter['post_status'] != 'publish' || get_post_meta( $chapter['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
 										<li class="chapter <?php echo pb_get_section_type( get_post($chapter['ID']) ) ?>"><a href="<?php echo get_permalink($chapter['ID']); ?>"><?php if(($c = pb_get_chapter_number($chapter['post_name'])) !== 0) echo '<span class="toc-chapter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $chapter['post_title'] ); ?></a>
 										<?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $chapter['ID'] );
-										if ( $subtitle && pb_should_parse_sections() ){?>
-											<?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+										if ( $subtitle && pb_headings_to_toc() > 0 ){?>
+											<?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, pb_headings_to_toc()+1);?>
 										<?php } ?>
 										</li>
 									<?php endforeach; ?>
@@ -43,8 +43,8 @@
 									<?php if ($bm['post_status'] != 'publish' || get_post_meta( $bm['ID'], 'invisible-in-toc', true ) == 'on') continue; // Skip ?>
 									<li class="back-matter <?php echo pb_get_section_type( get_post($bm['ID']) ) ?>"><a href="<?php echo get_permalink($bm['ID']); ?>"><?php if(($c = pb_get_chapter_number($bm['post_name'])) !== 0) echo '<span class="toc-back-matter-number">'.$c." - ".'</span>'?><?php echo pb_strip_br( $bm['post_title'] );?></a>
                                         <?php $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $bm['ID'] );
-                                        if ( $subtitle && pb_should_parse_sections() ){?>
-                                            <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle);?>
+                                        if ( $subtitle && pb_headings_to_toc() > 0 ){?>
+                                            <?php echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, pb_headings_to_toc()+1);?>
                                         <?php } ?>
                                     </li>
 									<?php endforeach; ?>

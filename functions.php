@@ -343,12 +343,12 @@ function pb_get_chapter_sections( $id ) {
 }
 
 /**
- * Is the parse sections option true?
+ * How many headers should be added to TOC
  *
  * @return boolean
  */
-function pb_should_parse_sections() {
-	return \PressBooks\Export\Export::shouldParseSections();
+function pb_headings_to_toc() {
+	return \PressBooks\Export\Export::headingsToTOC();
 }
 
 /**

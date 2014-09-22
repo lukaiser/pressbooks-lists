@@ -1279,9 +1279,9 @@ class Hpub extends Export {
 
 			$html .= "</a>";
 
-            if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+            if ( \PressBooks\Export\Export::headingsToTOC() > 0 ) {
                 $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
-                $html .= \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, $v['filename']);
+                $html .= \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, \PressBooks\Export\Export::headingsToTOC()+1, $v['filename']);
             }
 			
 			$html .= "</li>\n";

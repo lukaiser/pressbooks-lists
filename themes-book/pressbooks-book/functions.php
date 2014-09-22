@@ -369,13 +369,19 @@ function pressbooks_theme_options_global_init() {
 	);
 
 	add_settings_field(
-		'parse_sections',
-		__( 'Parse Sections', 'pressbooks' ),
-		'pressbooks_theme_parse_sections_callback',
+		'parse_headings',
+		__( 'Add headings to TOC', 'pressbooks' ),
+		'pressbooks_theme_parse_headings_callback',
 		$_page,
 		$_section,
 		array(
-			 __( 'Enable a two-level TOC', 'pressbooks' )
+			 __( 'None', 'pressbooks' ),
+             __( 'Heading 1', 'pressbooks' ),
+             __( 'Heading 2 and higher', 'pressbooks' ),
+             __( 'Heading 3 and higher', 'pressbooks' ),
+             __( 'Heading 4 and higher', 'pressbooks' ),
+             __( 'Heading 5 and higher', 'pressbooks' ),
+             __( 'Heading 6 and higher', 'pressbooks' ),
 		)
 	);
 
@@ -422,17 +428,20 @@ function pressbooks_theme_chapter_numbers_callback( $args ) {
 }
 
 // Global Options Field Callback
-function pressbooks_theme_parse_sections_callback( $args ) {
+function pressbooks_theme_parse_headings_callback( $args ) {
 
 	$options = get_option( 'pressbooks_theme_options_global' );
 
-	if ( ! isset( $options['parse_sections'] ) ) {
-		$options['parse_sections'] = 0;
+	if ( ! isset( $options['parse_headings'] ) ) {
+		$options['parse_headings'] = 0;
 	}
 
-	$html = '<input type="checkbox" id="parse_sections" name="pressbooks_theme_options_global[parse_sections]" value="1" ' . checked( 1, $options['parse_sections'], false ) . '/>';
-	$html .= '<label for="parse_sections"> ' . $args[0] . '</label>';
-	echo $html;
+    $html = "<select name='pressbooks_theme_options_global[parse_headings]' id='parse_headings' >";
+    foreach ( $args as $key => $val ) {
+        $html .= "<option value='" . ( $key ) . "' " . selected( $key , $options['parse_headings'], false ) . ">$val</option>";
+    }
+    $html .= '<select>';
+    echo $html;
 }
 
 function pressbooks_theme_lists_position_callback( $args ){
@@ -461,12 +470,7 @@ function pressbooks_theme_options_global_sanitize( $input ) {
 		$options['chapter_numbers'] = 1;
 	}
 
-	if ( ! isset( $input['parse_sections'] ) || $input['parse_sections'] != '1' ) {
-		$options['parse_sections'] = 0;
-	} else {
-		$options['parse_sections'] = 1;
-	}
-
+    $options['parse_headings'] = absint( $input['parse_headings'] );
     $options['lists_position'] = absint( $input['lists_position'] );
 
 	return $options;

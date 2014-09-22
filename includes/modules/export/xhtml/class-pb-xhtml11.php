@@ -708,10 +708,10 @@ class Xhtml11 extends Export {
 												
 						echo '</a>';
 
-                        if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                        if ( \PressBooks\Export\Export::headingsToTOC() > 0 ) {
                             // Display headlines
                             $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $chapter['ID'] );
-                            echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, '');
+                            echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, \PressBooks\Export\Export::headingsToTOC()+1, '');
                         }
 													
 						echo '</li>';
@@ -804,10 +804,10 @@ class Xhtml11 extends Export {
 
 					echo '</a>';
 
-                    if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                    if ( \PressBooks\Export\Export::headingsToTOC() > 0 ) {
                         // Display headlines
                         $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $val['ID'] );
-                        echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, '');
+                        echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, \PressBooks\Export\Export::headingsToTOC()+1, '');
                     }
 
                     echo '</li>';

@@ -47,9 +47,9 @@ echo '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 							echo '<li><a href="OEBPS/' . $v['filename'] . '">' . $text . '</a>' . "\n";
 						} else {
 							echo '<li><a href="OEBPS/' . $v['filename'] . '">' . $text . '</a>';
-                            if ( \PressBooks\Export\Export::shouldParseSections() == true ) {
+                            if ( \PressBooks\Export\Export::headingsToTOC() > 0 ) {
                                 $subtitle = \PressBooks\Lists\Lists::get_chapter_list_by_pid("h", $v['ID'] );
-                                echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, 3, "OEBPS/".$v['filename'], "ol");
+                                echo \PressBooks\Lists\ListShow::hierarchical_chapter($subtitle, \PressBooks\Export\Export::headingsToTOC()+1, "OEBPS/".$v['filename'], "ol");
                             }
                             echo '</li>' . "\n";
 						}
