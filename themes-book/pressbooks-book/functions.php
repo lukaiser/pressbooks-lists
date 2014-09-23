@@ -185,7 +185,7 @@ endif;
  * ------------------------------------------------------------------------ */
  
 function pressbooks_enqueue_styles() {
-   		 wp_enqueue_style( 'pressbooks-fonts', 'http://fonts.googleapis.com/css?family=Cardo:400,400italic,700|Oswald');  		   		   		       		           
+   		 wp_enqueue_style( 'pressbooks-fonts', '//fonts.googleapis.com/css?family=Cardo:400,400italic,700|Oswald');
 }     
 add_action('wp_print_styles', 'pressbooks_enqueue_styles'); 
 

@@ -266,7 +266,7 @@ class Lists_List_Table extends \WP_List_Table {
     function extra_tablenav( $which ) {
         if($this->listtype == "h"){
             if ( $which == "top" ){
-                $current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+                $current_url = set_url_scheme( (empty( $_SERVER['HTTPS']) ? 'http://':'https://')  . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
                 $current_url = remove_query_arg( 'heading-filter', $current_url );
                 $toc = pb_headings_to_toc();
                 $selected = array_key_exists('heading-filter', $_GET) ? $_GET['heading-filter'] : $toc;
