@@ -115,7 +115,7 @@ register_nav_menu('main', 'Main Nav');
 * Enqueue Google font API for front end only fonts
 **/
 function publisherroot_enqueue_styles() {
-   		 wp_enqueue_style( 'publisherroot-fonts', 'http://fonts.googleapis.com/css?family=PT+Serif:400,700');  		   		   		       		           
+   		 wp_enqueue_style( 'publisherroot-fonts', '//fonts.googleapis.com/css?family=PT+Serif:400,700');
 }     
 add_action('wp_print_styles', 'publisherroot_enqueue_styles'); 
 
