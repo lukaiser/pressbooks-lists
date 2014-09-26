@@ -84,7 +84,7 @@ class DOMElementUpdater {
             'ID'           => $this->node->pid,
             'post_content' => $content
         );
-        wp_update_post ($new_post);
+        wp_update_post (add_magic_quotes($new_post));
     }
 
 
