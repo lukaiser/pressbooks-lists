@@ -29,6 +29,8 @@ class XpathList implements iList {
      */
     public $chapters;
 
+    private $onGoingNumber = 0;
+
     /**
      * @param string|array $tagname the HTML tag name or tag names
      * @param string $captionXpath the Xpath from the DOMElement to the caption
@@ -145,6 +147,8 @@ class XpathList implements iList {
                 $up->save();
 
                 $node->type = $type;
+                $node->chapter->updateNumbering();
+                $this->updateOnGoingNumbering();
             }
         }
 
@@ -183,6 +187,8 @@ class XpathList implements iList {
 
         $up->save();
         $node->active = $active;
+        $node->chapter->updateNumbering();
+        $this->updateOnGoingNumbering();
     }
 
     /**
@@ -227,24 +233,6 @@ class XpathList implements iList {
             $out[] = $list->getHierarchicalArray();
         }
         return($out);
-    }
-
-    /**
-     * Returns a ongoing numbers representing the position of the child
-     * @param \PressBooks\Lists\ListNode $child
-     * @return int
-     */
-    function getOnGoingNumberOfChild($child){
-        $i = 0;
-        foreach($this->chapters as $chapter){
-            $n = $chapter->getOnGoingNumberOfChild($child);
-            if($n > 0){
-                return($i+$n);
-            }else{
-                $i -= $n;
-            }
-        }
-        return(0);
     }
 
     /**
@@ -366,7 +354,19 @@ class XpathList implements iList {
         }else{
             $ncaption = "";
         }
-        return new \PressBooks\Lists\ListNode($this, $active, $pid, $nid, $nname, $ncaption);
+        $onGoingNumber = 0;
+        if($active){
+            $this->onGoingNumber ++;
+            $onGoingNumber = $this->onGoingNumber;
+        }
+        return new \PressBooks\Lists\ListNode($this, $active, $pid, $nid, $nname, $ncaption, $onGoingNumber);
+    }
+
+    private function updateOnGoingNumbering(){
+        $this->onGoingNumber = 0;
+        foreach($this->chapters as $c){
+            $this->onGoingNumber = $c->updateOnGoingNumbering($this->onGoingNumber);
+        }
     }
 
     /**

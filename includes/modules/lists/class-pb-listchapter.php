@@ -45,6 +45,7 @@ class ListChapter {
      * @var string the post name
      */
     public $post_name;
+    private $cna;
 
     /**
      * @param \PressBooks\Lists\iList $list the list the chapter is in
@@ -62,6 +63,7 @@ class ListChapter {
         $this->active = $active;
         $this->caption = $caption;
         $this->child = array();
+        $this->initCNA();
     }
 
     /**
@@ -71,59 +73,54 @@ class ListChapter {
     function addChild($child){
         $child->chapter = $this;
         $this->child[] = $child;
+        if($child->active){
+            $nn = $this->list->getDepthOfTagname($child->type)+1;
+            $this->cna[$nn] ++;
+            for($i = $nn+1; $i <7; $i++){
+                $this->cna[$i] = 0;
+            }
+            $child->numbering = array_slice($this->cna, 0, $nn+1);
+        }
     }
 
-    /**
-     * Returns a array of the numbers representing the position of the child
-     * @param \PressBooks\Lists\ListNode $child
-     * @return array
-     */
-    function getNumberingOfChild($child){
-        $cna = array();
-        $cna[] = "";
+    function initCNA(){
+        $this->cna = array();
+        $this->cna[] = "";
         if(is_array($this->list->getTypes())){
             foreach($this->list->getTypes() as $type){
-                $cna[] = 0;
+                $this->cna[] = 0;
             }
         }else{
-            $cna[] = 0;
+            $this->cna[] = 0;
         }
+    }
+
+    function updateNumbering(){
+        $this->initCNA();
         foreach($this->child as $c){
             if($c->active){
                 $nn = $this->list->getDepthOfTagname($c->type)+1;
-                $cna[$nn] ++;
+                $this->cna[$nn] ++;
                 for($i = $nn+1; $i <7; $i++){
-                    $cna[$i] = 0;
+                    $this->cna[$i] = 0;
                 }
-                if($child == $c){
-                    return(array_slice($cna, 0, $nn+1));
-                }
+                $c->numbering = array_slice($this->cna, 0, $nn+1);
             }
         }
     }
 
-    /**
-     * Returns a ongoing numbers representing the position of the child
-     * @param \PressBooks\Lists\ListNode $child
-     * @return int
-     */
-    function getOnGoingNumberOfChild($child){
-        $i = 0;
-        $p = get_post( $this->pid );
-        $type = pb_get_section_type( $p );
-        if( $type == 'numberless' || get_post_meta( $this->pid, 'invisible-in-toc', true ) == 'on'){
-            return(0);
+    function updateOnGoingNumbering($i){
+        if( !$this->active ){
+            return($i);
         }
         foreach($this->child as $node){
             if($node->active){
                 $i++;
-                if($node === $child){
-                    return($i);
-                }
+                $node->onGoingNumber = $i;
             }
 
         }
-        return(-$i);
+        return($i);
     }
 
     /**

@@ -97,11 +97,4 @@ interface iList {
      * @return \PressBooks\Lists\ListChapter|false
      */
     function getChapterByPid($pid);
-
-    /**
-     * Returns a ongoing numbers representing the position of the child
-     * @param \PressBooks\Lists\ListNode $child
-     * @return int
-     */
-    function getOnGoingNumberOfChild($child);
 } 

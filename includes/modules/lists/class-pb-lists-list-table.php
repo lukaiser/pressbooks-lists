@@ -392,7 +392,7 @@ class Lists_List_Table extends \WP_List_Table {
 		}
 
 		// Pagination
-		$per_page = 1000;
+		$per_page = 200;
 		$current_page = $this->get_pagenum();
 		$total_items = count( $data );
 
@@ -568,7 +568,7 @@ class Lists_List_Table extends \WP_List_Table {
      * @return array
      */
     protected function getItemsData() {
-        $bl = \PressBooks\Lists\Lists::get_book_lists(true);
+        $bl = \PressBooks\Lists\Lists::get_book_lists(false);
         if($this->displayChapter){
             $data = $bl[$this->listtype]->getFlatArrayWithChapter();
         }else{

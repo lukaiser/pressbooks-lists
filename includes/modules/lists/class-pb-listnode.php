@@ -23,7 +23,7 @@ class ListNode {
     /**
      * @var \PressBooks\Lists\iList the list the node is in
      */
-    public $list;
+    private $list;
 
     /**
      * @var bool if the node is active and in the list or not
@@ -45,6 +45,14 @@ class ListNode {
      * @var string the caption of the node
      */
     public $caption;
+    /**
+     * @var array the numbering
+     */
+    public $numbering;
+    /**
+     * @var int on Going Number
+     */
+    public $onGoingNumber;
 
     /**
      * @param \PressBooks\Lists\ListChapter the chapter the node is in $list
@@ -53,26 +61,17 @@ class ListNode {
      * @param string $id the id of the node
      * @param string $type the type of the node
      * @param string $caption the caption of the node
+     * @param array the numbering
+     * @param int on Going Number
      */
-    function __construct($list = null, $active = true, $pid = null, $id = null, $type = null, $caption = null){
+    function __construct($list = null, $active = true, $pid = null, $id = null, $type = null, $caption = null, $onGoingNumber = null){
         $this->list = $list;
         $this->active = $active;
         $this->pid = $pid;
         $this->id = $id;
         $this->type = $type;
         $this->caption = $caption;
-    }
-
-    /**
-     * Returns an array of the numbers representing the position of the node in the content
-     * @return array
-     */
-    function getNumbering(){
-        if($this->active){
-            return($this->chapter->getNumberingOfChild($this));
-        }else{
-            return(array());
-        }
+        $this->onGoingNumber = $onGoingNumber;
     }
 
     /**
@@ -84,8 +83,8 @@ class ListNode {
         $out["id"] = $this->id;
         $out["pid"] = $this->pid;
         $out["type"] = $this->type;
-        $out["numberArray"] = $this->getNumbering();
-        $out["onGoingNumber"] = $this->list->getOnGoingNumberOfChild($this);
+        $out["numberArray"] = $this->numbering;
+        $out["onGoingNumber"] = $this->onGoingNumber;
         $out["caption"] = $this->caption;
         $out["active"] = $this->active;
         return $out;
