@@ -60,9 +60,20 @@ class Lists_List_Table extends \WP_List_Table {
 
         wp_enqueue_style( 'lists-list-table', PB_PLUGIN_URL.'assets/css/pblistslisttable.css' );
         wp_register_script( 'lists-list-table', PB_PLUGIN_URL.'assets/js/pblistslisttable.js' );
-        $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),  'copy_reference_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ));
+        $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),
+                                    'copy_reference_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ),
+                                    'not_displayed' => __( 'The theme you have selected displays no number for %s.', 'pressbooks' ),
+                                    "h1" => __( 'Heading 1', 'pressbooks' ),
+                                    "h2" => __( 'Heading 2', 'pressbooks' ),
+                                    "h3" => __( 'Heading 3', 'pressbooks' ),
+                                    "h4" => __( 'Heading 4', 'pressbooks' ),
+                                    "h5" => __( 'Heading 5', 'pressbooks' ),
+                                    "h6" => __( 'Heading 6', 'pressbooks' ),
+                                    "img" => __( 'Image', 'pressbooks' ),
+                                    "table" => __( 'Table', 'pressbooks' ));
         wp_localize_script( 'lists-list-table', 'PBL10', $translation_array );
         wp_enqueue_script( 'lists-list-table' );
+        echo('<div class="loader" style="position: fixed; left: 0px; top: 0px; width: 100%; height: 100%; z-index: 9999; background: rgb(249,249,249); opacity: 0.5;"><img src="'.PB_PLUGIN_URL.'assets/images/loader.gif" alt="Exporting..." width="128" height="15" style="left: 50%; top: 50%; margin-left: -64px; position: fixed;" /></div>');
 
         //Info panel if chapter numbers are hidden
         $options = get_option( 'pressbooks_theme_options_global' );
@@ -178,13 +189,19 @@ class Lists_List_Table extends \WP_List_Table {
     }
 
     function column_active($item) {
+        $active = $item["active"];
+        if(array_key_exists("chapterActive", $item)){
+            if(!$item["chapterActive"]){
+                $active = false;
+            }
+        }
         return sprintf(
             '<input type="checkbox" name="%1$s[]" value="%2$s" class="%4$s" %3$s/>',
             /*$1%s*/
             "pb_lists_list_active",
             /*$2%s*/
             $item['id'], // The value of the checkbox should be the record's id
-            $item['active'] ? "checked" : "",
+            $active ? "checked" : "",
             "type-".$item["type"]
         );
     }
@@ -192,7 +209,7 @@ class Lists_List_Table extends \WP_List_Table {
     function column_number($item) {
         $options = get_option( 'pressbooks_theme_options_global' );
         if($this->listtype == "h" && !@$options['chapter_numbers']){
-            return '<span class="dashicons dashicons-info" title="'.__( 'Chapter numbers are disabled in the Theme Options', 'pressbooks' ).'"></a>';
+            return '<span class="dashicons dashicons-info perma" title="'.__( 'Chapter numbers are disabled in the Theme Options', 'pressbooks' ).'"></a>';
         }
         if(!Lists::add_numbers_to_list_elements() && $item["type"] != "chapter" && $item["type"] != "part" && $item["type"] != "front-matter" && $item["type"] != "back-matter"){
             return '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
@@ -443,10 +460,20 @@ class Lists_List_Table extends \WP_List_Table {
 	function _js_vars() {
 
 		parent::_js_vars();
+        $bl = \PressBooks\Lists\Lists::get_book_lists(false);
+        $types = $bl[$this->listtype]->getTypes();
+        if(!is_array($types)){
+            $types = array($types);
+        }
+        $options = get_option( 'pressbooks_theme_options_global' );
         $args = array(
             'nonce'  => wp_create_nonce("ajax-lists-list-nonce"),
             'listtype' => $this->listtype,
-            'listdata' => $this->getItemsData(),
+            'listdata' => $this->getItemsData(true),
+            'types' => $types,
+            'ongoingnumbering' => !@$options['chapter_numbers'],
+            'hlevel' => Lists::add_numbers_to_heading_levels(),
+            'addNumbers' => Lists::add_numbers_to_list_elements(),
         );
         printf( "<script type='text/javascript'>add_list_args = %s;</script>\n", json_encode( $args ) );
 	}
@@ -492,25 +519,7 @@ class Lists_List_Table extends \WP_List_Table {
                 update_post_meta( $id, 'pb_part_invisible', $value );
             }
         }
-
-        $response = $this->getItemsData();
-        $hlevel = Lists::add_numbers_to_heading_levels();
-        $options = get_option( 'pressbooks_theme_options_global' );
-        foreach($response as &$item){
-            if($this->listtype == "h" && !@$options['chapter_numbers']){
-                $item["number"] = '<span class="dashicons dashicons-info" title="'.__( 'Chapter numbers are disabled in the Theme Options', 'pressbooks' ).'"></a>';
-            }else if(!Lists::add_numbers_to_list_elements() && $item["type"] != "chapter" && $item["type"] != "part" && $item["type"] != "front-matter" && $item["type"] != "back-matter"){
-                $item["number"] = '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
-            }else if (($item["type"] == "h1" && $hlevel < 1) || ($item["type"] == "h2" && $hlevel < 2) || ($item["type"] == "h3" && $hlevel < 3) || ($item["type"] == "h4" && $hlevel < 4) || ($item["type"] == "h5" && $hlevel < 5) || ($item["type"] == "h6" && $hlevel < 6)){
-                $item["number"] = '<span class="dashicons dashicons-info" title="'.sprintf(__( 'The theme you have selected displays no number for %1$s.', 'pressbooks' ), $this->get_nice_type($item["type"])).'"></a>';
-            }else if($item["active"]){
-                $item["number"] = ListNodeShow::get_number($item);
-            }else{
-                $item["number"] = "";
-            }
-            $item["caption"] = ListNodeShow::get_caption($item);
-        }
-        die( json_encode( $response ) );
+        die( json_encode( true ) );
 	}
 
     function process_bulk_action() {
@@ -567,73 +576,63 @@ class Lists_List_Table extends \WP_List_Table {
     /**
      * @return array
      */
-    protected function getItemsData() {
+    protected function getItemsData($chapters = false) {
+        $chapters = $this->displayChapter ? true : $chapters;
         $bl = \PressBooks\Lists\Lists::get_book_lists(false);
-        if($this->displayChapter){
-            $data = $bl[$this->listtype]->getFlatArrayWithChapter();
-        }else{
-            $data = $bl[$this->listtype]->getFlatArray();
-        }
+        $data = $bl[$this->listtype]->getFlatArrayWithChapter();
         $book_structure = \PressBooks\Book::getBookStructure();
         $hasParts = (count( $book_structure['part'] ) > 1 );
         $out = array();
-        $lastChapter = false;
-        $i = 0;
-        foreach($data as $item){
+        $c = array();
+
+        $lastFront = false;
+        $lastFrontKey = "";
+        $firstBack = false;
+        foreach($data as &$item){
+
+
             //add data for chapters and parts
             if($item["type"] == "chapter" || $item["type"] == "part" || $item["type"] == "front-matter" || $item["type"] == "back-matter"){
                 if($item["type"] != "part"){
                     $item["id"] = "c-".$item['pid'];
-                    $item["active"] = get_post_meta( $item['pid'], 'invisible-in-toc', true ) !== 'on';
-                    $lastChapter = $item;
-                    $out[$item["id"]] = $item;
+                    $c[$item["id"]] = $item;
+                    if($chapters){
+                        $out[$item["id"]] = $item;
+                    }
                 }else{
                     if($hasParts){
                         $item["id"] = "p-".$item['pid'];
-                        $out[$item["id"]] = $item;
+                        if($chapters){
+                            $out[$item["id"]] = $item;
+                        }
                     }
                 }
             }else{
-                // Add information about the chapter to list items
-                if(!$lastChapter || $item["pid"] != $lastChapter["pid"]){
-                    $lastChapter = array();
-                    $lastChapter["pid"] = $item['pid'];
-                    $lastChapter["active"] = get_post_meta( $item['pid'], 'invisible-in-toc', true ) !== 'on';
-                    $p = get_post($item["pid"]);
-                    $lastChapter["caption"] = $p->post_title;
-                }
-                $item["chapterActive"] = $lastChapter["active"];
-                if(!$lastChapter["active"]){
-                    $item["active"] = false;
-                }
-                $item["chapterTitle"] = $lastChapter["caption"];
                 $item["id"] = "n-".$item["id"];
+                $item["chapterActive"] = $c["c-".$item['pid']]["active"];
                 $out[$item["id"]] = $item;
             }
-
-        }
-
-        //identify the last front matter and the first back matter for css properties
-        $lastFront = false;
-        $lastFrontKey = "";
-        foreach($out as $key => &$item){
-            if(!$lastFront){
-                if($item["type"] != "part" && $item["type"] != "chapter"){
-                    $lastFrontKey = $key;
-                }else{
-                    if($lastFrontKey != ""){
-                        $out[$lastFrontKey]["lastFrontMatter"] = true;
+            if($chapters){
+                if(!$lastFront){
+                    if($item["type"] != "part" && $item["type"] != "chapter"){
+                        $lastFrontKey = $item["id"];
+                    }else{
+                        if($lastFrontKey != ""){
+                            $out[$lastFrontKey]["lastFrontMatter"] = true;
+                        }
+                        $lastFront = true;
                     }
-                    $lastFront = true;
+                }
+
+                if(!$firstBack && $item["type"] == "back-matter"){
+                    $out[$item["id"]]["firstBackMatter"] = true;
+                    $firstBack = true;
                 }
             }
-            if($item["type"] == "back-matter"){
-                $item["firstBackMatter"] = true;
-                break;
-            }
-        }
 
+        }
         return $out;
+
     }
 
 
