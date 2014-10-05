@@ -187,6 +187,7 @@ class Epub201 extends Export {
 	 * @return bool
 	 */
 	function convert() {
+        do_action( 'pb_export_epub_convert_start');
 
 		// Sanity check
 
@@ -243,6 +244,7 @@ class Epub201 extends Export {
         remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
         remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
         remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
+        do_action( 'pb_export_epub_convert_end');
 		return true;
 	}
 

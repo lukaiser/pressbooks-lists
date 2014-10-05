@@ -118,6 +118,8 @@ class Hpub extends Export {
 	 */
 	function convert() {
 
+        do_action( 'pb_export_hpub_convert_start');
+
 		if ( empty( $this->tmpDir ) || ! is_dir( $this->tmpDir ) ) {
 			$this->logError( '$this->tmpDir must be set before calling convert().' );
 
@@ -156,6 +158,7 @@ class Hpub extends Export {
         remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
         remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
         remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
+        do_action( 'pb_export_hpub_convert_end');
 		return true;
 	}
 

@@ -99,7 +99,7 @@ class Xhtml11 extends Export {
 	 * @return bool
 	 */
 	function convert() {
-
+        do_action( 'pb_export_xhtml_convert_start');
 		// Get XHTML
 
 		$output = $this->queryXhtml();
@@ -113,7 +113,7 @@ class Xhtml11 extends Export {
 		$filename = $this->timestampedFileName( '.html' );
 		file_put_contents( $filename, $output );
 		$this->outputPath = $filename;
-
+        do_action( 'pb_export_xhtml_convert_end');
 		return true;
 	}
 
@@ -148,6 +148,8 @@ class Xhtml11 extends Export {
 	 * Procedure for "format/xhtml" rewrite rule.
 	 */
 	function transform() {
+
+        do_action( 'pb_export_xhtml_transform_start');
 
 		// Check permissions
 
@@ -239,6 +241,8 @@ class Xhtml11 extends Export {
         remove_filter( 'pb_get_chapter_number', array($this, "get_chapter_number"), 10);
         remove_filter( 'pb_get_chapter_number_section', array($this, "get_chapter_number_section"), 10);
         remove_filter( 'pb_getBookStructure', array($this, "getBookStructure"), 10);
+
+        do_action( 'pb_export_xhtml_transform_end');
 	}
 
 
