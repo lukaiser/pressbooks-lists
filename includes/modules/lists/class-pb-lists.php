@@ -198,6 +198,14 @@ class Lists {
      */
     static function get_book_lists($idsAndClasses = false){
         // -----------------------------------------------------------------------------
+        // First access after PressBooks update?
+        // -----------------------------------------------------------------------------
+        if(!get_option( 'pressbooks_lists_initiated', false )){
+            $idsAndClasses = true;
+            add_option( 'pressbooks_lists_initiated', true, '', 'yes' );
+        }
+
+        // -----------------------------------------------------------------------------
         // Is cached?
         // -----------------------------------------------------------------------------
 
