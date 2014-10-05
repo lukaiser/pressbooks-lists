@@ -376,7 +376,12 @@ class Lists {
         $lists["img"] = new \PressBooks\Lists\ImgList("img", "@alt");
         $lists["table"] = new \PressBooks\Lists\XpathList("table", "caption");
 
-        return $lists;
+        /**
+         * Filter the generation of the lists
+         *
+         * @param int $default  The default lists
+         */
+        return apply_filters( 'pb_lists_get_initial_lists', $lists );
     }
 
 }
