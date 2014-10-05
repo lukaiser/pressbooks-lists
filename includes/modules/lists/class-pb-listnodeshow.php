@@ -50,9 +50,10 @@ class ListNodeShow {
      * Returns a string representing the node for a reference view
      * @param \PressBooks\Lists\ListNode $node the node
      * @param string $settings settings for the output (b: don't show brackets; a: don't show acronym; n: don't show number; C: show caption);
+     * @param string|null $caption a caption you want to set
      * @return string
      */
-    static function get_ref_string($node, $settings=""){
+    static function get_ref_string($node, $settings="", $caption = null){
         $node = static::get_the_array($node);
         $num = static::get_number($node);
 
@@ -66,12 +67,18 @@ class ListNodeShow {
         $dn = strpos($settings, "n") !== false ? false : $dn;
         $dc = strpos($settings, "C") !== false ? true : $dc;
 
+        if(!is_null( $caption ) && $caption!=""){
+            $dc = true;
+        }else{
+            $caption = static::get_caption($node);
+        }
+
         $output = $da ? '<span class="ref-link-acronym">'.static::get_acronym($node).":</span>" : "";
         $output .= $da && $dn ? " " : "";
         $output = $dn ? '<span class="ref-link-number">'.$output.$num."</span>" : $output;
         $output .= $dc && $output != "" ? " " : "";
         $output .= $dc && $dn ? "- " : "";
-        $output .= $dc ? static::get_caption($node) : "";
+        $output .= $dc ? $caption : "";
         $output = '<a class="ref-link ref-link-'.$node["type"].'" href="'.static::get_href($node).'">'.$output.'</a>';
         $output = $db ? '( '.$output.' )' : $output;
         /**

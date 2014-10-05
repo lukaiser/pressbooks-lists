@@ -110,9 +110,10 @@ class Lists {
     /**
      * Handles the reference (ref) shortcode
      * @param $atts
+     * @param $content
      * @return string
      */
-    static function handle_ref_shortcode($atts){
+    static function handle_ref_shortcode($atts, $content = null){
         extract( shortcode_atts(
                 array(
                     'id' => false,
@@ -124,7 +125,7 @@ class Lists {
         }
         $node = static::get_list_node_by_id($id);
         if($node){
-            return ListNodeShow::get_ref_string($node, $d);
+            return ListNodeShow::get_ref_string($node, $d, $content);
         }else{
             return "";
         }
