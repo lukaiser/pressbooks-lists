@@ -28,7 +28,9 @@ class XpathList implements iList {
      * @var array the chapters
      */
     public $chapters;
-
+    /**
+     * @var int the ongoing number of the last element added to the last chapter added to the list
+     */
     private $onGoingNumber = 0;
 
     /**
@@ -362,6 +364,9 @@ class XpathList implements iList {
         return new \PressBooks\Lists\ListNode($this, $active, $pid, $nid, $nname, $ncaption, $onGoingNumber);
     }
 
+    /**
+     * Update the on going number of all elements of all chapters
+     */
     private function updateOnGoingNumbering(){
         $this->onGoingNumber = 0;
         foreach($this->chapters as $c){

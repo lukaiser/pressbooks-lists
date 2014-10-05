@@ -50,7 +50,7 @@ class ListNode {
      */
     public $numbering;
     /**
-     * @var int on Going Number
+     * @var int ongoing number
      */
     public $onGoingNumber;
 
@@ -62,7 +62,7 @@ class ListNode {
      * @param string $type the type of the node
      * @param string $caption the caption of the node
      * @param array the numbering
-     * @param int on Going Number
+     * @param int ongoing number
      */
     function __construct($list = null, $active = true, $pid = null, $id = null, $type = null, $caption = null, $onGoingNumber = null){
         $this->list = $list;

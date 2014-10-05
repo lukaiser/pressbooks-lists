@@ -113,6 +113,9 @@
             }
             this.recalculateNumbers();
         },
+        /**
+         * Recalculate the Numbers of the elements
+         */
         recalculateNumbers: function(){
             var cna = [];
             cna[cna.length] = 0;
@@ -124,6 +127,7 @@
             var self = this;
             var firstchapter = false;
             var firstbackmatter = false;
+            //Update the numbers
             $.each( add_list_args.listdata, function( key, value ) {
                 if( add_list_args.ongoingnumbering ){
                     if(value["active"] && value["type"] != "front-matter"  && value["type"] != "chapter" && value["type"] != "part" && value["type"] != "back-matter"){
@@ -142,6 +146,7 @@
                         }
                     }else{
                         if(value["active"] && add_list_args.listdata["c-"+value["pid"]]["active"]){
+                            //reset chapter number if changing from front matters to chapters or from chapters to back matters
                             if(!firstchapter && value["type"] == "chapter"){
                                 cna[0] = 0;
                                 firstchapter = true;
@@ -150,6 +155,7 @@
                                 cna[0] = 0;
                                 firstbackmatter = true;
                             }
+                            //update the right number
                             var nn = self.getDepthOfTagname(value["type"]);
                             cna[nn] ++;
                             for(var i = nn+1; i < 7; i++){
@@ -157,8 +163,10 @@
                             }
                             var cnan = cna.slice(0, nn+1);
                             if(value["type"] != "front-matter"  && value["type"] != "chapter" && value["type"] != "part" && value["type"] != "back-matter"){
+                                //get the stylized number from the chapter
                                 cnan[0] = add_list_args.listdata["c-"+value["pid"]]["number"];
                             }else{
+                                //romanzie or abcize if front or back matter
                                 if(value["type"] == "front-matter"){
                                     cnan[0] = self.romanize(cnan[0]);
                                 }else if(value["type"] == "back-matter"){
@@ -172,9 +180,11 @@
                     }
                 }
             });
+            //Update the list
             $("tr").each(function(){
                 var id = $(this).attr('id');
                 if(add_list_args.listdata[id]){
+                    //Set number
                     if($(this).find(".column-number").html().indexOf("perma") == -1){
                         if ((add_list_args.listdata[id]["type"] == "h1" && add_list_args.hlevel < 1) || (add_list_args.listdata[id]["type"] == "h2" && add_list_args.hlevel < 2) || (add_list_args.listdata[id]["type"] == "h3" && add_list_args.hlevel < 3) || (add_list_args.listdata[id]["type"] == "h4" && add_list_args.hlevel < 4) || (add_list_args.listdata[id]["type"] == "h5" && add_list_args.hlevel < 5) || (add_list_args.listdata[id]["type"] == "h6" && add_list_args.hlevel < 6)){
                             var type = PBL10[add_list_args.listdata[id]["type"]];
@@ -190,6 +200,7 @@
                             $(this).find(".column-number").html(add_list_args.listdata[id]["number"]);
                         }
                     }
+                    //Set active or inactive
                     if(add_list_args.listdata[id]["active"] && (add_list_args.listdata[id]['type'] == 'part' || add_list_args.listdata["c-"+add_list_args.listdata[id]["pid"]]["active"])){
                         $(this).removeClass("inactive");
                         $(this).find("td.column-active input").prop('checked', true);
@@ -208,12 +219,18 @@
             });
             $('.dashicons-info').qtip();
         },
+        /**
+         * Get the depth of a tagname
+         */
         getDepthOfTagname: function(type){
             if(type == "front-matter" || type == "chapter" || type == "back-matter"){
                 return(0);
             }
             return(add_list_args.types.indexOf(type)+1);
         },
+        /**
+         * Romanize a number
+         */
         romanize: function(n) {
             var r = '',
                 decimals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1],
@@ -226,6 +243,9 @@
             }
             return r;
         },
+        /**
+         * ABC-ize a number
+         */
         abcize: function (n) {
             var s = "";
             while(n >= 0) {

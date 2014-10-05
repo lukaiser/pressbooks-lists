@@ -14,6 +14,10 @@ namespace PressBooks\Lists;
  * Represents all the list items of a Chapter of the book
  * @package PressBooks\Lists
  */
+/**
+ * Class ListChapter
+ * @package PressBooks\Lists
+ */
 class ListChapter {
 
     /**
@@ -45,6 +49,9 @@ class ListChapter {
      * @var string the post name
      */
     public $post_name;
+    /**
+     * @var array an array containing the numbers representing the last element added to the chapter
+     */
     private $cna;
 
     /**
@@ -83,7 +90,10 @@ class ListChapter {
         }
     }
 
-    function initCNA(){
+    /**
+     * Initiate the array containing the numbers representing the last element added to the chapter
+     */
+    private function initCNA(){
         $this->cna = array();
         $this->cna[] = "";
         if(is_array($this->list->getTypes())){
@@ -95,6 +105,9 @@ class ListChapter {
         }
     }
 
+    /**
+     * Recalculate the numbers of the elements
+     */
     function updateNumbering(){
         $this->initCNA();
         foreach($this->child as $c){
@@ -109,6 +122,11 @@ class ListChapter {
         }
     }
 
+    /**
+     * Recalculate the ongoing number of the elements
+     * @param int $i the last number from the chapter before
+     * @return int
+     */
     function updateOnGoingNumbering($i){
         if( !$this->active ){
             return($i);

@@ -158,19 +158,24 @@ class ListNodeShow {
         if($node["active"]){
             $options = get_option( 'pressbooks_theme_options_global' );
             if (@$options['chapter_numbers'] ){
+                //If chapters have numbers
                 if(static::element($node)){
+                    //Numbers for everything except parts, chapters, front and back matters
                     $p = get_post( $node['pid'] );
                     $type = pb_get_section_type( $p );
                     if(Lists::add_numbers_to_list_elements() && $type !== 'numberless' && get_post_meta( $node['pid'], 'invisible-in-toc', true ) !== 'on'){
+                        //If the chapter is in the TOC
                         $hlevel = Lists::add_numbers_to_heading_levels();
                         if(($node["type"] != "h1" && $node["type"] != "h2" && $node["type"] != "h3" && $node["type"] != "h4" && $node["type"] != "h5" && $node["type"] != "h6")
                         || ($node["type"] == "h1" && $hlevel >= 1) || ($node["type"] == "h2" && $hlevel >= 2) || ($node["type"] == "h3" && $hlevel >= 3) || ($node["type"] == "h4" && $hlevel >= 4) || ($node["type"] == "h5" && $hlevel >= 5) || ($node["type"] == "h6" && $hlevel >= 6)){
+                            //If it is not a heading or the heading should get a number a it
                             $post_name = pb_get_post_name($node["pid"]);
                             $node["numberArray"][0] = pb_get_chapter_number($post_name);
                             $output = implode(".", $node["numberArray"]);
                         }
                     }
                 }else{
+                    //Parts, chapters, front and back matters
                     if($node["type"] != "part"){
                         $post_name = pb_get_post_name($node["pid"]);
                         $output = pb_get_chapter_number($post_name);
@@ -179,6 +184,7 @@ class ListNodeShow {
                     }
                 }
             }else{
+                //If chapters have no number, output ongoing number for none headings
                 if(Lists::add_numbers_to_list_elements()){
                     if(static::real_element($node)){
                         $output = $node["onGoingNumber"];
@@ -186,7 +192,7 @@ class ListNodeShow {
                 }
             }
         }
-        $output !== 0 ? $output : "";
+        $output = $output !== 0 ? $output : "";
         /**
          * Filter the default lists number string output.
          *

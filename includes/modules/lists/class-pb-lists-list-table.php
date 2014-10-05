@@ -60,6 +60,7 @@ class Lists_List_Table extends \WP_List_Table {
 
         wp_enqueue_style( 'lists-list-table', PB_PLUGIN_URL.'assets/css/pblistslisttable.css' );
         wp_register_script( 'lists-list-table', PB_PLUGIN_URL.'assets/js/pblistslisttable.js' );
+        //Translations
         $translation_array = array( 'chapter_activate_popup' => __( 'This list item is inactive because the containing chapter "%s" is not in the table of content. Do you want to activate both?', 'pressbooks' ),
                                     'copy_reference_popup' => __( 'Copy to clipboard: Ctrl+C, Enter', 'pressbooks' ),
                                     'not_displayed' => __( 'The theme you have selected displays no number for %s.', 'pressbooks' ),
@@ -73,6 +74,7 @@ class Lists_List_Table extends \WP_List_Table {
                                     "table" => __( 'Table', 'pressbooks' ));
         wp_localize_script( 'lists-list-table', 'PBL10', $translation_array );
         wp_enqueue_script( 'lists-list-table' );
+        //Loader for big books
         echo('<div class="loader" style="position: fixed; left: 0px; top: 0px; width: 100%; height: 100%; z-index: 9999; background: rgb(249,249,249); opacity: 0.5;"><img src="'.PB_PLUGIN_URL.'assets/images/loader.gif" alt="Exporting..." width="128" height="15" style="left: 50%; top: 50%; margin-left: -64px; position: fixed;" /></div>');
 
         //Info panel if chapter numbers are hidden
@@ -281,6 +283,7 @@ class Lists_List_Table extends \WP_List_Table {
     }
 
     function extra_tablenav( $which ) {
+        //Adds filter to TOC List
         if($this->listtype == "h"){
             if ( $which == "top" ){
                 $current_url = set_url_scheme( (empty( $_SERVER['HTTPS']) ? 'http://':'https://')  . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
@@ -591,7 +594,7 @@ class Lists_List_Table extends \WP_List_Table {
         foreach($data as &$item){
 
 
-            //add data for chapters and parts
+            //add data to chapters and parts
             if($item["type"] == "chapter" || $item["type"] == "part" || $item["type"] == "front-matter" || $item["type"] == "back-matter"){
                 if($item["type"] != "part"){
                     $item["id"] = "c-".$item['pid'];
@@ -612,6 +615,7 @@ class Lists_List_Table extends \WP_List_Table {
                 $item["chapterActive"] = $c["c-".$item['pid']]["active"];
                 $out[$item["id"]] = $item;
             }
+            //find last front matter and fist back matter
             if($chapters){
                 if(!$lastFront){
                     if($item["type"] != "part" && $item["type"] != "chapter"){
