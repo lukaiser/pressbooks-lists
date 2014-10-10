@@ -384,9 +384,12 @@ class XpathList implements iList {
     protected function addCaptionPrefixToNode($xpath, $node, $ndata, $prefix){
         $c = $xpath->query($this->captionXpath, $node)->item(0);
         if(get_class($c) == "DOMAttr"){
-            $c->value = $prefix.$c->value;
+            $c->value = strip_tags($prefix).$c->value;
         }else if(get_class($c) == "DOMElement"){
-            $c->nodeValue = $prefix.$c->nodeValue;
+            $node = $c->ownerDocument->createElement('span', '');
+            $node->nodeValue = $prefix;
+            $f = $c->firstChild;
+            $c->insertBefore($node, $f);
         }
     }
 
